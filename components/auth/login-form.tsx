@@ -6,7 +6,13 @@ import { ComicButton } from "@/components/brand/comic-button";
 
 const initialState: AuthState = {};
 
-export function LoginForm({ initialError }: { initialError?: string }) {
+export function LoginForm({
+  initialError,
+  next,
+}: {
+  initialError?: string;
+  next?: string;
+}) {
   const [state, action, pending] = useActionState(signInWithOtp, initialState);
 
   return (
@@ -20,6 +26,7 @@ export function LoginForm({ initialError }: { initialError?: string }) {
 
       {/* GitHub OAuth */}
       <form action={signInWithGithub} className="mt-6">
+        {next && <input type="hidden" name="next" value={next} />}
         <ComicButton variant="ink" type="submit" className="w-full">
           Continue with GitHub
         </ComicButton>
@@ -33,6 +40,7 @@ export function LoginForm({ initialError }: { initialError?: string }) {
 
       {/* Email OTP / magic link */}
       <form action={action} className="flex flex-col gap-3">
+        {next && <input type="hidden" name="next" value={next} />}
         <label htmlFor="email" className="font-display text-lg uppercase tracking-wide">
           Email
         </label>

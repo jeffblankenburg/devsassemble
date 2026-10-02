@@ -1,0 +1,42 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { requireAdmin } from "@/lib/auth/dal";
+
+export const metadata: Metadata = { title: "Admin" };
+
+const SECTIONS = [
+  {
+    href: "/admin/events",
+    title: "Events",
+    body: "Create and manage livestreamed meetups. Only published events are public.",
+    accent: "bg-brand-blue text-white",
+  },
+];
+
+export default async function AdminPage() {
+  await requireAdmin();
+
+  return (
+    <main className="mx-auto max-w-4xl px-6 py-12">
+      <h1 className="font-display text-5xl uppercase tracking-wide text-brand-ink">
+        Admin
+      </h1>
+      <p className="mt-2 text-brand-ink/70">Moderator & admin tools.</p>
+
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        {SECTIONS.map((s) => (
+          <Link
+            key={s.href}
+            href={s.href}
+            className={`rounded-[var(--radius-comic)] border-ink p-6 shadow-comic transition-transform hover:-translate-y-0.5 hover:shadow-comic-lg ${s.accent}`}
+          >
+            <h2 className="font-display text-2xl uppercase tracking-wide">
+              {s.title}
+            </h2>
+            <p className="mt-1 text-sm opacity-90">{s.body}</p>
+          </Link>
+        ))}
+      </div>
+    </main>
+  );
+}

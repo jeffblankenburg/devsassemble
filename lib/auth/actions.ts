@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { emailSchema } from "@/lib/validation/auth";
+import { safeNext } from "@/lib/auth/redirects";
 
 export type AuthState = {
   ok?: boolean;
@@ -33,11 +34,13 @@ export async function signInWithOtp(
 
   const supabase = await createClient();
   const origin = await getOrigin();
+  const next = safeNext(formData.get("next"));
+  const confirmUrl = `${origin}/auth/confirm?next=${encodeURIComponent(next)}`;
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: `${origin}/auth/confirm`,
+      emailRedirectTo: confirmUrl,
     },
   });
 
@@ -49,13 +52,15 @@ export async function signInWithOtp(
 }
 
 /** Start the GitHub OAuth flow, then redirect the browser to GitHub. */
-export async function signInWithGithub() {
+export async function signInWithGithub(formData?: FormData) {
   const supabase = await createClient();
   const origin = await getOrigin();
+  const next = safeNext(formData?.get("next"));
+  const callbackUrl = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: callbackUrl,
       scopes: "read:user user:email",
     },
   });

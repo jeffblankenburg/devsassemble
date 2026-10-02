@@ -1,0 +1,196 @@
+"use client";
+
+import { useActionState, type ReactNode } from "react";
+import {
+  createEvent,
+  updateEvent,
+  type EventFormState,
+} from "@/lib/events/actions";
+import { toDatetimeLocalValue } from "@/lib/events/format";
+import { ComicButton } from "@/components/brand/comic-button";
+import type { EventRow } from "@/lib/events/queries";
+
+const inputClass =
+  "rounded-[var(--radius-comic)] border-ink bg-white px-4 py-3 text-brand-ink outline-none focus:shadow-comic-sm";
+const labelClass =
+  "font-display text-lg uppercase tracking-wide text-brand-ink";
+
+function Field({
+  label,
+  children,
+  hint,
+}: {
+  label: string;
+  children: ReactNode;
+  hint?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className={labelClass}>{label}</span>
+      {children}
+      {hint && <span className="text-xs text-brand-ink/55">{hint}</span>}
+    </div>
+  );
+}
+
+export function EventForm({
+  mode,
+  event,
+}: {
+  mode: "create" | "edit";
+  event?: EventRow;
+}) {
+  const action = mode === "create" ? createEvent : updateEvent;
+  const [state, formAction, pending] = useActionState<EventFormState, FormData>(
+    action,
+    {},
+  );
+
+  return (
+    <form action={formAction} className="flex flex-col gap-5">
+      {mode === "edit" && event && (
+        <input type="hidden" name="id" value={event.id} />
+      )}
+
+      <Field label="Title">
+        <input
+          name="title"
+          required
+          defaultValue={event?.title ?? ""}
+          placeholder="Ship-it Thursday: agents in production"
+          className={inputClass}
+        />
+      </Field>
+
+      <Field label="Slug" hint="Permanent URL: /events/your-slug — lowercase, hyphens.">
+        <input
+          name="slug"
+          required
+          defaultValue={event?.slug ?? ""}
+          placeholder="ship-it-thursday-agents"
+          className={inputClass}
+        />
+      </Field>
+
+      <Field label="Summary" hint="Short blurb shown on cards (max 200 chars).">
+        <input
+          name="summary"
+          defaultValue={event?.summary ?? ""}
+          maxLength={200}
+          placeholder="What this session is about, in a sentence."
+          className={inputClass}
+        />
+      </Field>
+
+      <Field label="Description">
+        <textarea
+          name="description"
+          rows={5}
+          defaultValue={event?.description ?? ""}
+          placeholder="The full details."
+          className={inputClass}
+        />
+      </Field>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Starts" hint="Interpreted as the timezone below.">
+          <input
+            type="datetime-local"
+            name="starts_at"
+            required
+            defaultValue={
+              event ? toDatetimeLocalValue(event.starts_at) : ""
+            }
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Ends (optional)">
+          <input
+            type="datetime-local"
+            name="ends_at"
+            defaultValue={
+              event?.ends_at ? toDatetimeLocalValue(event.ends_at) : ""
+            }
+            className={inputClass}
+          />
+        </Field>
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Timezone">
+          <input
+            name="timezone"
+            defaultValue={event?.timezone ?? "America/New_York"}
+            placeholder="America/New_York"
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Host label">
+          <input
+            name="host"
+            defaultValue={event?.host ?? ""}
+            placeholder="Live build stream"
+            className={inputClass}
+          />
+        </Field>
+      </div>
+
+      <Field label="Location" hint="Leave blank for virtual-only.">
+        <input
+          name="location"
+          defaultValue={event?.location ?? ""}
+          placeholder="Virtual / Zoom / a city"
+          className={inputClass}
+        />
+      </Field>
+
+      <label className="flex items-center gap-3">
+        <input
+          type="checkbox"
+          name="is_virtual"
+          defaultChecked={event?.is_virtual ?? true}
+          className="h-5 w-5 rounded border-ink"
+        />
+        <span className={labelClass}>Virtual event</span>
+      </label>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Accent">
+          <select
+            name="accent"
+            defaultValue={event?.accent ?? "blue"}
+            className={inputClass}
+          >
+            <option value="blue">Blue</option>
+            <option value="lime">Lime</option>
+            <option value="purple">Purple</option>
+          </select>
+        </Field>
+        <Field label="Status" hint="Only published events are public.">
+          <select
+            name="status"
+            defaultValue={event?.status ?? "draft"}
+            className={inputClass}
+          >
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </Field>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <ComicButton variant="blue" type="submit" disabled={pending}>
+          {pending
+            ? "Saving…"
+            : mode === "create"
+              ? "Create event"
+              : "Save changes"}
+        </ComicButton>
+        {state.error && (
+          <span className="text-sm text-brand-purple">{state.error}</span>
+        )}
+      </div>
+    </form>
+  );
+}
