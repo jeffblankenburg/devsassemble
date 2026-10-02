@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 import { ComicButton } from "@/components/brand/comic-button";
+import { EventCard } from "@/components/events/event-card";
+import { listPublishedEvents } from "@/lib/events/queries";
 
 // ---------------------------------------------------------------------------
 // Content
@@ -63,36 +65,6 @@ const PILLARS = [
   },
 ];
 
-const EVENTS = [
-  {
-    month: "OCT",
-    day: "02",
-    weekday: "Thu",
-    time: "1:00 PM ET",
-    title: "Ship-it Thursday: agents in production",
-    host: "Live build stream",
-    accent: "bg-brand-blue text-white",
-  },
-  {
-    month: "OCT",
-    day: "09",
-    weekday: "Thu",
-    time: "1:00 PM ET",
-    title: "Prompt teardown — what actually moved the needle",
-    host: "Community roundtable",
-    accent: "bg-brand-lime text-brand-ink",
-  },
-  {
-    month: "OCT",
-    day: "16",
-    weekday: "Thu",
-    time: "1:00 PM ET",
-    title: "From zero to demo: an app, live, in 60 minutes",
-    host: "Live build stream",
-    accent: "bg-brand-purple text-white",
-  },
-];
-
 const BUILDS = [
   {
     title: "Inbox triage agent",
@@ -123,30 +95,6 @@ function SectionEyebrow({ children }: { children: ReactNode }) {
     <span className="inline-block rotate-[-2deg] rounded-md border-ink bg-brand-lime px-3 py-1 font-display text-lg uppercase tracking-wide text-brand-ink shadow-comic-sm">
       {children}
     </span>
-  );
-}
-
-function EventCard({ event }: { event: (typeof EVENTS)[number] }) {
-  return (
-    <article className="flex items-stretch gap-4 rounded-[var(--radius-comic)] border-ink bg-surface p-4 shadow-comic transition-transform duration-100 hover:-translate-y-0.5 hover:shadow-comic-lg">
-      <div
-        className={`flex w-20 shrink-0 flex-col items-center justify-center rounded-md border-ink ${event.accent} py-2 font-display leading-none`}
-      >
-        <span className="text-sm uppercase tracking-widest">
-          {event.month}
-        </span>
-        <span className="text-4xl">{event.day}</span>
-        <span className="text-xs uppercase opacity-90">{event.weekday}</span>
-      </div>
-      <div className="flex min-w-0 flex-col justify-center">
-        <span className="font-mono text-xs uppercase tracking-widest text-muted">
-          {event.time} · {event.host}
-        </span>
-        <h3 className="mt-1 font-display text-xl uppercase leading-tight tracking-wide text-brand-ink">
-          {event.title}
-        </h3>
-      </div>
-    </article>
   );
 }
 
@@ -183,7 +131,9 @@ function BuildCard({ build }: { build: (typeof BUILDS)[number] }) {
 // Page
 // ---------------------------------------------------------------------------
 
-export default function Home() {
+export default async function Home() {
+  const upcoming = await listPublishedEvents({ when: "upcoming", limit: 3 });
+
   return (
     <div className="flex flex-1 flex-col">
       {/* Header */}
@@ -377,9 +327,15 @@ export default function Home() {
               </ComicButton>
             </div>
             <div className="mt-10 grid gap-4">
-              {EVENTS.map((event) => (
-                <EventCard key={event.day} event={event} />
-              ))}
+              {upcoming.length > 0 ? (
+                upcoming.map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))
+              ) : (
+                <p className="rounded-[var(--radius-comic)] border-ink bg-surface p-6 text-center text-brand-ink/70 shadow-comic">
+                  New livestreams are posted here soon.
+                </p>
+              )}
             </div>
             <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted">
               Sign in to RSVP and get a reminder.
