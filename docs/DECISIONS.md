@@ -1,5 +1,28 @@
 # Build decisions & review notes
 
+## Session summary (what shipped while you were away)
+
+**MVP is functionally complete.** Stacked PRs — **merge in this order**, each
+retargets to `main` after the one before it merges:
+
+1. **#37** `build/baseline` → `main` — version-controls the previously-uncommitted scaffold + plan.
+2. **#38** `build/events` — events, RSVP, sign-up funnel, admin authoring, who's-going. (Migration `0002` already applied to Supabase.)
+3. **#39** `build/profiles` — public `/u/[username]` pages + "assembling at".
+4. **#40** `build/home-events` — home page wired to real events.
+
+All four: `tsc --noEmit` + `eslint` clean. 3 sample published events seeded in
+Supabase so pages render for review.
+
+**🔴 Top things to verify first (in a browser, with `npm run dev` on :3005):**
+1. The **RSVP → GitHub OAuth → back-to-event** funnel (the #1 risk). Also check the Supabase GitHub provider callback allows `…/auth/callback` with a `next` query param.
+2. Event times display as intended (UTC wall-clock + tz label — see below).
+3. `/events`, `/events/[slug]`, `/u/[username]`, `/admin/events` render on-brand.
+
+**Not built yet (queued):** forum discussions + moderation (#9/#17 — next, introduces a markdown/XSS surface worth verifying interactively), home-page live broadcast flag (#35), search (#19), feed (#16). Tasks tracked in the session task list.
+
+---
+
+
 Running log of judgment calls made while building autonomously, and — more
 importantly — **what needs your eyes**. Newest sections at the bottom.
 
