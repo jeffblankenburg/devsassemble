@@ -81,6 +81,33 @@ Legend: 🔴 needs your verification · 🟡 a simplification to revisit · 🟢
   is issue #35). Needs your Restream plan + embed URL, and a CSP `frame-src` entry
   before production.
 
+## Forum chunk (branch `build/forum`)
+
+- 🟢 Migrations `0003` (forum) + `0004` (harden) applied to Supabase. Tables:
+  `categories` (seeded with 4), `topics`, `posts`, `reports`. All have RLS:
+  public read of categories/topics/posts; authenticated self-write; author-or-admin
+  edit/delete; reports are insert-self + admin-only read/update.
+- 🔴 **XSS — verify this directly.** Markdown is rendered by `react-markdown` +
+  `rehype-sanitize` (safe default schema), with **no `rehype-raw`**, so embedded
+  HTML is escaped, not executed (`components/markdown/markdown.tsx`). Please smoke-test
+  by posting a topic/reply containing `<img src=x onerror=alert(1)>` and
+  `[click](javascript:alert(1))` and confirming **neither fires**. This is the one
+  piece I most want you to verify in a browser.
+- 🟢 Added deps: `react-markdown@^9`, `remark-gfm@^4`, `rehype-sanitize@^6`.
+- 🟡 **Permanent URLs (#31):** a topic's `slug` is **frozen at creation**
+  (base-slug + random suffix) and never regenerated on title edits, so links never
+  break. I chose a readable frozen slug over a bare uuid; it still satisfies
+  "survives title edits." The plan's id-based-canonical-with-redirects option
+  remains available if you later want title-in-URL that updates.
+- 🟡 **Flat replies** for MVP (`posts.parent_id` column exists, reserved for future
+  threading, but the UI renders a flat list).
+- 🟢 Banned users blocked at the DAL (`requireUser`); topic **lock** enforced in the
+  action + UI (not RLS). Reply-count kept in sync by the `bump_topic_on_post`
+  trigger; `0004` revokes its RPC execute grant (cleared the one new advisor warning).
+- 🟡 Admin report queue shows `target_type` + `target_id` (no slug lookup / deep
+  link yet) — enough to act on; a convenience link can come later.
+- 🟢 Seed: 1 sample topic + 1 reply (author `null`) so the pages render for review.
+
 ## Pre-existing security advisor warnings (NOT introduced here)
 
 From the `0001_profiles` migration; flagged for a future hardening pass (relates

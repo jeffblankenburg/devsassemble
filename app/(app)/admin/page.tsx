@@ -11,6 +11,12 @@ const SECTIONS = [
     body: "Create and manage livestreamed meetups. Only published events are public.",
     accent: "bg-brand-blue text-white",
   },
+  {
+    href: "/admin/reports",
+    title: "Reports",
+    body: "Review flagged topics and replies. Resolve or dismiss moderation reports.",
+    accent: "bg-brand-purple text-white",
+  },
 ];
 
 export default async function AdminPage() {

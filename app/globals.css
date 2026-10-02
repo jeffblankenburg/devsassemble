@@ -135,3 +135,105 @@ body {
     opacity: 1;
   }
 }
+
+/* Rendered markdown (forum topics & replies) — comic reading voice, no
+   typography plugin. Sanitized upstream in components/markdown/markdown.tsx. */
+.markdown {
+  color: var(--brand-ink);
+  line-height: 1.65;
+}
+.markdown > :first-child {
+  margin-top: 0;
+}
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+.markdown p {
+  margin: 0.75rem 0;
+}
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  font-family: var(--font-display), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 1.4rem 0 0.6rem;
+  line-height: 1.1;
+}
+.markdown h1 {
+  font-size: 1.9rem;
+}
+.markdown h2 {
+  font-size: 1.5rem;
+}
+.markdown h3 {
+  font-size: 1.25rem;
+}
+.markdown a {
+  color: var(--brand-blue);
+  text-decoration: underline;
+}
+.markdown ul,
+.markdown ol {
+  margin: 0.75rem 0;
+  padding-left: 1.4rem;
+}
+.markdown li {
+  margin: 0.25rem 0;
+}
+.markdown ul {
+  list-style: disc;
+}
+.markdown ol {
+  list-style: decimal;
+}
+.markdown code {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.9em;
+  background: color-mix(in srgb, var(--brand-ink) 8%, transparent);
+  padding: 0.1em 0.35em;
+  border-radius: 0.3rem;
+}
+.markdown pre {
+  background: var(--brand-ink);
+  color: #f7f1e3;
+  padding: 1rem;
+  border-radius: var(--radius-comic);
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+.markdown pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+.markdown blockquote {
+  border-left: 4px solid var(--brand-purple);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: color-mix(in srgb, var(--brand-ink) 75%, transparent);
+}
+.markdown hr {
+  border: 0;
+  border-top: 3px solid var(--brand-ink);
+  margin: 1.5rem 0;
+}
+.markdown strong {
+  font-weight: 700;
+}
+.markdown table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  width: 100%;
+}
+.markdown th,
+.markdown td {
+  border: 2px solid var(--brand-ink);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.markdown img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-comic);
+}
