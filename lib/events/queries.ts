@@ -153,6 +153,35 @@ export async function getAttendees(
   }));
 }
 
+/** Upcoming published events a member has RSVP'd to (two-step for robustness). */
+export async function getUpcomingEventsForUser(
+  userId: string,
+  limit = 6,
+): Promise<EventRow[]> {
+  const supabase = await createClient();
+
+  const { data: rsvpRows, error: rsvpError } = await supabase
+    .from("rsvps")
+    .select("event_id")
+    .eq("user_id", userId);
+  if (rsvpError) throw rsvpError;
+
+  const ids = (rsvpRows ?? []).map((r) => (r as { event_id: string }).event_id);
+  if (ids.length === 0) return [];
+
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .in("id", ids)
+    .eq("status", "published")
+    .gte("starts_at", nowIso)
+    .order("starts_at", { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as EventRow[];
+}
+
 /** The current user's RSVP status for an event, or null. */
 export async function getUserRsvp(
   eventId: string,
