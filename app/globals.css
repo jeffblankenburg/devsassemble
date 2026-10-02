@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/*
+  DevsAssemble brand system — comic-book "Avengers Assemble" energy.
+  Palette pulled from the logo: electric blue (DEVS), lime (ASSEMBLE),
+  purple (shadow / .AI), heavy black ink outlines, warm cream paper.
+*/
+:root {
+  --background: #f7f1e3; /* cream paper from the icon plate */
+  --foreground: #0a0a0a; /* ink */
+
+  --brand-blue: #2f6bff;
+  --brand-blue-ink: #1b3fb0;
+  --brand-lime: #a6e22e;
+  --brand-lime-ink: #6f9e12;
+  --brand-purple: #6d28d9;
+  --brand-purple-ink: #4c1d95;
+  --brand-ink: #0a0a0a;
+  --brand-cream: #f7f1e3;
+
+  --surface: #ffffff;
+  --muted: #565656; /* darkened for AA contrast on cream paper */
+  --border: #0a0a0a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-ink: var(--brand-blue-ink);
+  --color-brand-lime: var(--brand-lime);
+  --color-brand-lime-ink: var(--brand-lime-ink);
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-purple-ink: var(--brand-purple-ink);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-cream: var(--brand-cream);
+
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-geist-mono);
+
+  --radius-comic: 0.75rem;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Comic hard-edged drop shadow (no blur) — the signature outline look. */
+@utility shadow-comic {
+  box-shadow: 4px 4px 0 0 var(--brand-ink);
+}
+@utility shadow-comic-lg {
+  box-shadow: 8px 8px 0 0 var(--brand-ink);
+}
+@utility shadow-comic-sm {
+  box-shadow: 2px 2px 0 0 var(--brand-ink);
+}
+
+/* Heavy ink outline used on cards, buttons, badges. */
+@utility border-ink {
+  border: 3px solid var(--brand-ink);
+}
+
+/* Chunky comic text stroke for display headings. */
+@utility text-stroke-ink {
+  -webkit-text-stroke: 2px var(--brand-ink);
+  paint-order: stroke fill;
+}
+
+/* Ben-Day halftone dot texture — comic newsprint atmosphere. */
+@utility halftone {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--brand-ink) 14%, transparent) 1.5px,
+    transparent 1.6px
+  );
+  background-size: 13px 13px;
+}
+
+/* Diagonal action lines — soft speed-stripe backdrop. */
+@utility action-lines {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--brand-ink) 6%, transparent) 0 2px,
+    transparent 2px 16px
+  );
+}
+
+/*
+  Accessible focus ring in the comic language: a chunky purple halo that
+  works on any accent background. Pair on all interactive elements.
+*/
+@utility focus-comic {
+  outline: none;
+}
+.focus-comic:focus-visible {
+  outline: 3px solid var(--brand-purple);
+  outline-offset: 3px;
+  border-radius: var(--radius-comic);
+}
+
+/* Staggered "pop" reveal for a single orchestrated page load. */
+@keyframes comic-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@utility pop-in {
+  opacity: 0;
+  animation: comic-pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* Respect users who ask for less motion — reveal instantly, no transforms. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+  }
+  .pop-in {
+    opacity: 1;
+  }
+}
