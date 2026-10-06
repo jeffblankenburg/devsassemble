@@ -1,9 +1,5 @@
 import * as z from "zod";
 
-export const emailSchema = z.object({
-  email: z.email({ error: "Enter a valid email address." }).trim().toLowerCase(),
-});
-
 export const profileSchema = z.object({
   display_name: z
     .string()
