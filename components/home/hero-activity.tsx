@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { listTopics } from "@/lib/forum/queries";
+import { listRecentRepos } from "@/lib/repos/queries";
 import { listRecentMembers } from "@/lib/profile/queries";
 import { timeAgo } from "@/lib/forum/format";
 
@@ -8,15 +9,49 @@ function initial(name: string | null, username: string) {
   return (name ?? username).charAt(0).toUpperCase();
 }
 
+type ActivityItem = {
+  key: string;
+  icon: string;
+  title: string;
+  href: string;
+  meta: string;
+  at: string;
+};
+
 /**
- * Compact "live now" panel for the hero's right column — latest discussions +
- * newest members, from live data. Pre-launch it invites the first post.
+ * Compact activity panel for the hero's right column — a unified "Latest" feed
+ * of discussions + projects (recency-sorted) plus newest members, from live
+ * data. Pre-launch the empty state invites the first post.
  */
 export async function HeroActivity() {
-  const [topics, members] = await Promise.all([
-    listTopics({ limit: 3 }),
+  const [topics, repos, members] = await Promise.all([
+    listTopics({ limit: 4 }),
+    listRecentRepos(4),
     listRecentMembers(6),
   ]);
+
+  const items: ActivityItem[] = [
+    ...topics.map((t) => ({
+      key: `t-${t.id}`,
+      icon: "💬",
+      title: t.title,
+      href: `/discussions/${t.slug}`,
+      meta: `${t.author?.username ? `@${t.author.username}` : "a member"} · ${
+        t.reply_count
+      } ${t.reply_count === 1 ? "reply" : "replies"}`,
+      at: t.last_activity_at,
+    })),
+    ...repos.map((r) => ({
+      key: `r-${r.id}`,
+      icon: "📦",
+      title: `${r.owner}/${r.name}`,
+      href: "/projects",
+      meta: r.kind === "build" ? "new build" : "new pick",
+      at: r.created_at,
+    })),
+  ]
+    .sort((a, b) => (a.at < b.at ? 1 : -1))
+    .slice(0, 4);
 
   return (
     <div className="w-full max-w-md rounded-[var(--radius-comic)] border-ink bg-surface p-5 shadow-comic-lg">
@@ -26,28 +61,31 @@ export async function HeroActivity() {
           Latest
         </span>
         <Link
-          href="/discussions"
+          href="/projects"
           className="focus-comic font-mono text-xs uppercase tracking-widest text-muted hover:text-brand-blue"
         >
-          All →
+          Explore →
         </Link>
       </div>
 
-      {topics.length > 0 ? (
+      {items.length > 0 ? (
         <ul className="mt-3 flex flex-col gap-2">
-          {topics.map((t) => (
-            <li key={t.id}>
+          {items.map((item) => (
+            <li key={item.key}>
               <Link
-                href={`/discussions/${t.slug}`}
+                href={item.href}
                 className="focus-comic block rounded-md border-[2px] border-brand-ink bg-brand-cream px-3 py-2 transition-transform hover:-translate-y-0.5"
               >
-                <span className="line-clamp-1 font-display text-base uppercase tracking-wide text-brand-ink">
-                  {t.title}
+                <span className="flex items-center gap-2">
+                  <span aria-hidden className="shrink-0 text-base">
+                    {item.icon}
+                  </span>
+                  <span className="line-clamp-1 font-display text-base uppercase tracking-wide text-brand-ink">
+                    {item.title}
+                  </span>
                 </span>
-                <span className="font-mono text-xs text-muted">
-                  {t.author?.username ? `@${t.author.username}` : "a member"} ·{" "}
-                  {timeAgo(t.last_activity_at)} · {t.reply_count}{" "}
-                  {t.reply_count === 1 ? "reply" : "replies"}
+                <span className="mt-0.5 block font-mono text-xs text-muted">
+                  {item.meta} · {timeAgo(item.at)}
                 </span>
               </Link>
             </li>
@@ -56,7 +94,7 @@ export async function HeroActivity() {
       ) : (
         <div className="mt-3 rounded-md border-[2px] border-brand-ink bg-brand-cream px-3 py-3">
           <p className="font-display text-base uppercase tracking-wide text-brand-ink">
-            Be the first to post
+            Nothing here yet — be first
           </p>
           <Link
             href="/discussions/new"
@@ -74,7 +112,10 @@ export async function HeroActivity() {
         {members.length > 0 ? (
           <ul className="flex -space-x-2">
             {members.map((m) => (
-              <li key={m.username} className="transition-transform hover:-translate-y-0.5">
+              <li
+                key={m.username}
+                className="transition-transform hover:-translate-y-0.5"
+              >
                 <Link href={`/u/${m.username}`} aria-label={`@${m.username}`}>
                   {m.avatar_url ? (
                     <Image

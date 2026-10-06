@@ -90,3 +90,23 @@ export async function listRepos(opts?: {
   }
   return result;
 }
+
+export type RecentRepo = {
+  id: string;
+  owner: string;
+  name: string;
+  kind: RepoKind;
+  created_at: string;
+};
+
+/** Newest repos, for the home activity feed. Public read. */
+export async function listRecentRepos(limit = 4): Promise<RecentRepo[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("repos")
+    .select("id, owner, name, kind, created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as RecentRepo[];
+}
