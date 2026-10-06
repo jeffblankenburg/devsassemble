@@ -19,13 +19,23 @@ export function Logo({
 
   return (
     <Link href="/" aria-label="DevsAssemble home" className={className}>
+      {/*
+        unoptimized: serve the brand PNG as-is (no WebP conversion). The logo is
+        small, and skipping the optimizer avoids a stale-image cache where updated
+        art keeps serving the old optimized copy.
+      */}
       <Image
         src={src}
         alt="DevsAssemble"
         width={dims.width}
         height={dims.height}
         priority={priority}
-        className="h-auto w-auto"
+        unoptimized
+        className={
+          variant === "icon"
+            ? "h-12 w-12"
+            : "h-auto w-[150px] max-w-full sm:w-[200px] md:w-[240px]"
+        }
       />
     </Link>
   );

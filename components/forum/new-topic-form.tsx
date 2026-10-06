@@ -3,6 +3,7 @@
 import { useActionState, type ReactNode } from "react";
 import { createTopic, type ForumFormState } from "@/lib/forum/actions";
 import { ComicButton } from "@/components/brand/comic-button";
+import { ChoiceChips } from "@/components/ui/choice-chips";
 import type { Category } from "@/lib/forum/queries";
 
 const inputClass =
@@ -37,16 +38,11 @@ export function NewTopicForm({ categories }: { categories: Category[] }) {
   return (
     <form action={action} className="flex flex-col gap-5">
       <Field label="Category">
-        <select name="category_id" required defaultValue="" className={inputClass}>
-          <option value="" disabled>
-            Choose a category
-          </option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+        <ChoiceChips
+          name="category_id"
+          required
+          options={categories.map((c) => ({ value: c.id, label: c.name }))}
+        />
       </Field>
 
       <Field label="Title">

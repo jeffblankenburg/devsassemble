@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
+import { MobileNav } from "@/components/site/mobile-nav";
 import { signOut } from "@/lib/auth/actions";
 import type { SessionUser } from "@/lib/auth/dal";
 
@@ -12,10 +13,11 @@ const NAV = [
 /** Header for the authenticated app shell. */
 export function AppHeader({ user }: { user: SessionUser }) {
   return (
-    <header className="flex items-center justify-between border-b-[3px] border-brand-ink px-6 py-3">
-      <div className="flex items-center gap-6">
-        <Logo />
-        <nav className="hidden gap-4 sm:flex">
+    <header className="relative flex items-center justify-between border-b-[3px] border-brand-ink px-6 py-3">
+      <div className="flex items-center gap-4">
+        <MobileNav items={NAV} ctaHref="/dashboard" ctaLabel="Dashboard" />
+        <Logo priority />
+        <nav className="hidden gap-4 md:flex">
           {NAV.map((item) => (
             <Link
               key={item.href}

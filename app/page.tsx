@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { ComicButton } from "@/components/brand/comic-button";
+import { MobileNav } from "@/components/site/mobile-nav";
 import { EventCard } from "@/components/events/event-card";
+import { HeroActivity } from "@/components/home/hero-activity";
 import { listPublishedEvents } from "@/lib/events/queries";
 
 // ---------------------------------------------------------------------------
@@ -11,7 +14,6 @@ import { listPublishedEvents } from "@/lib/events/queries";
 const NAV = [
   { href: "#how", label: "How it works" },
   { href: "#events", label: "Events" },
-  { href: "#showcase", label: "Showcase" },
   { href: "#community", label: "Community" },
 ];
 
@@ -65,27 +67,6 @@ const PILLARS = [
   },
 ];
 
-const BUILDS = [
-  {
-    title: "Inbox triage agent",
-    blurb: "An LLM copilot that labels, drafts, and schedules — self-hosted.",
-    tags: ["Next.js", "Claude", "MCP"],
-    tint: "bg-brand-blue",
-  },
-  {
-    title: "Repo-aware code reviewer",
-    blurb: "Fans out subagents across a diff and posts inline findings.",
-    tags: ["TypeScript", "Agents", "GitHub"],
-    tint: "bg-brand-purple",
-  },
-  {
-    title: "Voice-to-ticket pipeline",
-    blurb: "Standups in, structured Linear issues out — zero copy-paste.",
-    tags: ["Whisper", "Workflow", "Linear"],
-    tint: "bg-brand-lime",
-  },
-];
-
 // ---------------------------------------------------------------------------
 // Local presentational pieces
 // ---------------------------------------------------------------------------
@@ -95,35 +76,6 @@ function SectionEyebrow({ children }: { children: ReactNode }) {
     <span className="inline-block rotate-[-2deg] rounded-md border-ink bg-brand-lime px-3 py-1 font-display text-lg uppercase tracking-wide text-brand-ink shadow-comic-sm">
       {children}
     </span>
-  );
-}
-
-function BuildCard({ build }: { build: (typeof BUILDS)[number] }) {
-  return (
-    <article className="group flex flex-col overflow-hidden rounded-[var(--radius-comic)] border-ink bg-surface shadow-comic transition-transform duration-100 hover:-translate-y-1 hover:shadow-comic-lg">
-      {/* Cover plate — a halftone-textured accent panel stands in for a screenshot. */}
-      <div className={`halftone relative h-32 ${build.tint} border-b-[3px] border-brand-ink`}>
-        <span className="absolute bottom-2 right-3 font-display text-sm uppercase tracking-widest text-white/80">
-          Build
-        </span>
-      </div>
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="font-display text-2xl uppercase leading-tight tracking-wide text-brand-ink">
-          {build.title}
-        </h3>
-        <p className="mt-2 flex-1 text-sm text-brand-ink/75">{build.blurb}</p>
-        <ul className="mt-4 flex flex-wrap gap-2">
-          {build.tags.map((tag) => (
-            <li
-              key={tag}
-              className="rounded-md border-[2px] border-brand-ink bg-brand-cream px-2 py-0.5 font-mono text-xs text-brand-ink"
-            >
-              {tag}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </article>
   );
 }
 
@@ -140,85 +92,81 @@ export default async function Home() {
       <header className="sticky top-0 z-20 border-b-[3px] border-brand-ink bg-brand-cream/90 backdrop-blur supports-[backdrop-filter]:bg-brand-cream/75">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Logo priority className="block" />
-          <nav
-            aria-label="Primary"
-            className="hidden items-center gap-6 md:flex"
-          >
-            {NAV.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="focus-comic font-display text-lg uppercase tracking-wide text-brand-ink transition-colors hover:text-brand-blue"
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-          <ComicButton href="/login" variant="lime">
-            Sign in
-          </ComicButton>
+          <div className="flex items-center gap-4">
+            <nav
+              aria-label="Primary"
+              className="hidden items-center gap-6 md:flex"
+            >
+              {NAV.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="focus-comic font-display text-lg uppercase tracking-wide text-brand-ink transition-colors hover:text-brand-blue"
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+            <span className="hidden md:block">
+              <ComicButton href="/login" variant="lime">
+                Sign in
+              </ComicButton>
+            </span>
+            <MobileNav items={NAV} ctaHref="/login" ctaLabel="Sign in" />
+          </div>
         </div>
       </header>
 
       <main id="main" className="flex flex-1 flex-col">
-        {/* Hero */}
-        <section className="halftone relative overflow-hidden px-6 py-20 sm:py-28">
-          {/* Floating comic bursts, decorative. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-[6%] top-16 hidden rotate-[-8deg] rounded-[var(--radius-comic)] border-ink bg-brand-blue px-4 py-2 font-display text-lg uppercase text-white shadow-comic lg:block"
-          >
-            Show
-          </div>
-          <div
-            aria-hidden
-            className="pointer-events-none absolute right-[8%] top-28 hidden rotate-[7deg] rounded-[var(--radius-comic)] border-ink bg-brand-purple px-4 py-2 font-display text-lg uppercase text-white shadow-comic lg:block"
-          >
-            Share
-          </div>
-          <div
-            aria-hidden
-            className="pointer-events-none absolute bottom-10 left-[12%] hidden rotate-[5deg] rounded-[var(--radius-comic)] border-ink bg-brand-lime px-4 py-2 font-display text-lg uppercase text-brand-ink shadow-comic xl:block"
-          >
-            Assemble
-          </div>
-
-          <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
-            <span className="pop-in mb-6 inline-block rotate-[-2deg] rounded-[var(--radius-comic)] border-ink bg-brand-lime px-4 py-1 font-display text-xl uppercase tracking-wide text-brand-ink shadow-comic-sm">
-              The AI dev community
-            </span>
-            <h1
-              className="pop-in font-display text-6xl uppercase leading-[0.95] tracking-tight text-brand-ink sm:text-8xl"
-              style={{ animationDelay: "80ms" }}
-            >
-              Devs,{" "}
-              <span className="text-brand-blue text-stroke-ink">assemble</span>
-            </h1>
-            <p
-              className="pop-in mt-6 max-w-2xl text-lg text-brand-ink/80 sm:text-xl"
-              style={{ animationDelay: "160ms" }}
-            >
-              A place for AI software developers to show what they&apos;ve built,
-              share the tools and strategies behind it, and assemble for
-              livestreamed meetings.
-            </p>
-            <div
-              className="pop-in mt-10 flex flex-col gap-4 sm:flex-row"
-              style={{ animationDelay: "240ms" }}
-            >
-              <ComicButton href="/login" variant="blue" size="lg">
-                Join the community
-              </ComicButton>
-              <ComicButton href="/events" variant="ink" size="lg">
-                See upcoming events
-              </ComicButton>
+        {/* Hero — split: message/CTAs + live activity panel */}
+        <section className="halftone relative overflow-hidden px-6 py-12 sm:py-16">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
+            {/* Left: message + CTAs */}
+            <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+              <span className="pop-in mb-5 inline-block rotate-[-2deg] rounded-[var(--radius-comic)] border-ink bg-brand-lime px-4 py-1 font-display text-xl uppercase tracking-wide text-brand-ink shadow-comic-sm">
+                The AI dev community
+              </span>
+              <h1
+                className="pop-in font-display text-5xl uppercase leading-[0.95] tracking-tight text-brand-ink sm:text-6xl lg:text-7xl"
+                style={{ animationDelay: "80ms" }}
+              >
+                Devs,{" "}
+                <span className="text-brand-blue text-stroke-ink">assemble</span>
+              </h1>
+              <p
+                className="pop-in mt-5 max-w-xl text-lg text-brand-ink/80 sm:text-xl"
+                style={{ animationDelay: "160ms" }}
+              >
+                A place for AI software developers to show what they&apos;ve
+                built, share the tools and strategies behind it, and assemble for
+                livestreamed meetings.
+              </p>
+              <div
+                className="pop-in mt-8 flex flex-col gap-4 sm:flex-row"
+                style={{ animationDelay: "240ms" }}
+              >
+                <ComicButton href="/login" variant="blue" size="lg">
+                  Join the community
+                </ComicButton>
+                <ComicButton href="/events" variant="ink" size="lg">
+                  See upcoming events
+                </ComicButton>
+              </div>
+              <p
+                className="pop-in mt-4 font-mono text-xs uppercase tracking-widest text-muted"
+                style={{ animationDelay: "320ms" }}
+              >
+                Free · Public to read · Sign in to post &amp; RSVP
+              </p>
             </div>
-            <p
-              className="pop-in mt-4 font-mono text-xs uppercase tracking-widest text-muted"
-              style={{ animationDelay: "320ms" }}
+
+            {/* Right: live activity, above the fold */}
+            <div
+              className="pop-in flex justify-center lg:justify-end"
+              style={{ animationDelay: "200ms" }}
             >
-              Free · Public to read · Sign in to post &amp; RSVP
-            </p>
+              <HeroActivity />
+            </div>
           </div>
         </section>
 
@@ -343,35 +291,6 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Showcase preview */}
-        <section
-          id="showcase"
-          className="halftone scroll-mt-24 border-y-[3px] border-brand-ink px-6 py-20 sm:py-24"
-        >
-          <div className="mx-auto max-w-6xl">
-            <div className="flex flex-col items-end justify-between gap-6 sm:flex-row">
-              <div>
-                <SectionEyebrow>The showcase</SectionEyebrow>
-                <h2 className="mt-4 font-display text-4xl uppercase tracking-wide text-brand-ink sm:text-5xl">
-                  See what devs are shipping
-                </h2>
-                <p className="mt-3 max-w-xl text-brand-ink/75">
-                  Real builds with real repos. Screenshots, demos, and the story
-                  behind each one.
-                </p>
-              </div>
-              <ComicButton href="/showcase" variant="blue">
-                Explore the showcase
-              </ComicButton>
-            </div>
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {BUILDS.map((build) => (
-                <BuildCard key={build.title} build={build} />
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* Community band / CTA */}
         <section id="community" className="scroll-mt-24 px-6 py-20 sm:py-28">
           <div className="mx-auto max-w-4xl">
@@ -392,7 +311,7 @@ export default async function Home() {
                   <ComicButton href="/login" variant="lime" size="lg">
                     Create your account
                   </ComicButton>
-                  <ComicButton href="/showcase" variant="ink" size="lg">
+                  <ComicButton href="/discussions" variant="ink" size="lg">
                     Browse first
                   </ComicButton>
                 </div>
@@ -416,9 +335,9 @@ export default async function Home() {
             <h2 className="font-display text-lg uppercase tracking-wide text-brand-ink">
               Explore
             </h2>
-            <a href="#showcase" className="focus-comic text-sm text-brand-ink/75 hover:text-brand-blue">
-              Showcase
-            </a>
+            <Link href="/discussions" className="focus-comic text-sm text-brand-ink/75 hover:text-brand-blue">
+              Discussions
+            </Link>
             <a href="#events" className="focus-comic text-sm text-brand-ink/75 hover:text-brand-blue">
               Events
             </a>

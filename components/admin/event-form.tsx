@@ -8,6 +8,7 @@ import {
 } from "@/lib/events/actions";
 import { toDatetimeLocalValue } from "@/lib/events/format";
 import { ComicButton } from "@/components/brand/comic-button";
+import { ChoiceChips, ColorSwatches } from "@/components/ui/choice-chips";
 import type { EventRow } from "@/lib/events/queries";
 
 const inputClass =
@@ -144,38 +145,39 @@ export function EventForm({
         />
       </Field>
 
-      <label className="flex items-center gap-3">
-        <input
-          type="checkbox"
+      <Field label="Format">
+        <ChoiceChips
           name="is_virtual"
-          defaultChecked={event?.is_virtual ?? true}
-          className="h-5 w-5 rounded border-ink"
+          defaultValue={(event?.is_virtual ?? true) ? "true" : "false"}
+          options={[
+            { value: "true", label: "Virtual" },
+            { value: "false", label: "In person" },
+          ]}
         />
-        <span className={labelClass}>Virtual event</span>
-      </label>
+      </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Accent">
-          <select
+          <ColorSwatches
             name="accent"
             defaultValue={event?.accent ?? "blue"}
-            className={inputClass}
-          >
-            <option value="blue">Blue</option>
-            <option value="lime">Lime</option>
-            <option value="purple">Purple</option>
-          </select>
+            options={[
+              { value: "blue", label: "Blue" },
+              { value: "lime", label: "Lime" },
+              { value: "purple", label: "Purple" },
+            ]}
+          />
         </Field>
         <Field label="Status" hint="Only published events are public.">
-          <select
+          <ChoiceChips
             name="status"
             defaultValue={event?.status ?? "draft"}
-            className={inputClass}
-          >
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
+            options={[
+              { value: "draft", label: "Draft" },
+              { value: "published", label: "Published" },
+              { value: "cancelled", label: "Cancelled" },
+            ]}
+          />
         </Field>
       </div>
 

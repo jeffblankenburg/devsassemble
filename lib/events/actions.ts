@@ -52,7 +52,7 @@ function eventRecordFrom(
       ends_at: data.ends_at ? toUtcIso(data.ends_at) : null,
       timezone: nullIfEmpty(data.timezone) ?? "America/New_York",
       location: nullIfEmpty(data.location),
-      is_virtual: formData.get("is_virtual") === "on",
+      is_virtual: formData.get("is_virtual") === "true",
       host: nullIfEmpty(data.host),
       accent: data.accent,
       status: data.status,

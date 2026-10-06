@@ -33,3 +33,22 @@ export async function getProfileByUsername(
   if (error) throw error;
   return (data as PublicProfile) ?? null;
 }
+
+export type MemberPreview = {
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  created_at: string;
+};
+
+/** Newest members, for the home-page community activity. Public read. */
+export async function listRecentMembers(limit = 8): Promise<MemberPreview[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("username, display_name, avatar_url, created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as MemberPreview[];
+}
