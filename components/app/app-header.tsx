@@ -5,7 +5,7 @@ import { signOut } from "@/lib/auth/actions";
 import type { SessionUser } from "@/lib/auth/dal";
 
 const NAV = [
-  { href: "/builds", label: "Builds" },
+  { href: "/projects", label: "Projects" },
   { href: "/discussions", label: "Discussions" },
   { href: "/events", label: "Events" },
 ];

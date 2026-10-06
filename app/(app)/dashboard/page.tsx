@@ -19,13 +19,13 @@ export default async function DashboardPage() {
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <Link
-          href="/builds/new"
+          href="/projects/new"
           className="rounded-[var(--radius-comic)] border-ink bg-brand-blue p-5 font-display text-xl uppercase text-white shadow-comic hover:-translate-y-0.5"
         >
-          Post a build
+          Add a project
         </Link>
         <Link
-          href="/discussions"
+          href="/discussions/new"
           className="rounded-[var(--radius-comic)] border-ink bg-brand-lime p-5 font-display text-xl uppercase text-brand-ink shadow-comic hover:-translate-y-0.5"
         >
           Start a discussion
