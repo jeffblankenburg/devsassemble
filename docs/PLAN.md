@@ -148,7 +148,7 @@ Milestone: [MVP](https://github.com/jeffblankenburg/devsassemble/milestone/1).
 
 **Out (deliberately):** event comments / any free-text UGC (keeps the moderation
 surface near-zero at launch — the existing ban flag suffices), member-created
-events, media, notifications, search, discussion, the agent/evaluation layer.
+events, media, notifications, search, discussion, the agent/evaluation layer. 
 
 **Fast-follow (v1.1)** —
 [milestone](https://github.com/jeffblankenburg/devsassemble/milestone/2): text-only
