@@ -9,6 +9,7 @@ import {
 import { toDatetimeLocalValue } from "@/lib/events/format";
 import { ComicButton } from "@/components/brand/comic-button";
 import { ChoiceChips, ColorSwatches } from "@/components/ui/choice-chips";
+import { ComicDateTimePicker } from "@/components/admin/comic-date-time-picker";
 import type { EventRow } from "@/lib/events/queries";
 
 const inputClass =
@@ -93,26 +94,19 @@ export function EventForm({
         />
       </Field>
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <Field label="Starts" hint="Interpreted as the timezone below.">
-          <input
-            type="datetime-local"
+          <ComicDateTimePicker
             name="starts_at"
-            required
-            defaultValue={
-              event ? toDatetimeLocalValue(event.starts_at) : ""
-            }
-            className={inputClass}
+            defaultValue={event ? toDatetimeLocalValue(event.starts_at) : undefined}
           />
         </Field>
         <Field label="Ends (optional)">
-          <input
-            type="datetime-local"
+          <ComicDateTimePicker
             name="ends_at"
             defaultValue={
-              event?.ends_at ? toDatetimeLocalValue(event.ends_at) : ""
+              event?.ends_at ? toDatetimeLocalValue(event.ends_at) : undefined
             }
-            className={inputClass}
           />
         </Field>
       </div>
