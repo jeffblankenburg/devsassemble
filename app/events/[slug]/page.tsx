@@ -109,6 +109,13 @@ export default async function EventDetailPage({ params }: EventPageProps) {
             )}
           </ul>
 
+          <a
+            href={`/events/${event.slug}/calendar.ics`}
+            className="focus-comic mt-4 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-brand-blue hover:underline"
+          >
+            + Add to calendar
+          </a>
+
           {event.description && (
             <div className="mt-8 whitespace-pre-wrap text-lg leading-relaxed text-brand-ink/85">
               {event.description}

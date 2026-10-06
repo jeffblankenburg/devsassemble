@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { PublicHeader } from "@/components/site/public-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { EventCard } from "@/components/events/event-card";
+import { CalendarSubscribe } from "@/components/events/calendar-subscribe";
 import { listPublishedEvents } from "@/lib/events/queries";
 
 export const metadata: Metadata = {
@@ -39,6 +40,10 @@ export default async function EventsPage() {
             behind the tools. Browsing is open to all — sign in to RSVP.
           </p>
         </header>
+
+        <div className="mt-8">
+          <CalendarSubscribe />
+        </div>
 
         <section className="mt-10">
           {upcoming.length > 0 ? (

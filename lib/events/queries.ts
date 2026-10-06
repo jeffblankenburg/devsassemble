@@ -68,6 +68,18 @@ export async function getEventBySlug(slug: string): Promise<EventRow | null> {
   return (data as EventRow) ?? null;
 }
 
+/** Published + cancelled events for the iCal feed (cancellations propagate). */
+export async function listEventsForCalendar(): Promise<EventRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .in("status", ["published", "cancelled"])
+    .order("starts_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as EventRow[];
+}
+
 /** A single event by id (admin edit). Visibility follows RLS. */
 export async function getEventById(id: string): Promise<EventRow | null> {
   const supabase = await createClient();
