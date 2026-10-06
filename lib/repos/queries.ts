@@ -96,7 +96,9 @@ export type RecentRepo = {
   owner: string;
   name: string;
   kind: RepoKind;
+  note: string | null;
   created_at: string;
+  submitter: { username: string | null; display_name: string | null } | null;
 };
 
 /** Newest repos, for the home activity feed. Public read. */
@@ -104,9 +106,11 @@ export async function listRecentRepos(limit = 4): Promise<RecentRepo[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("repos")
-    .select("id, owner, name, kind, created_at")
+    .select(
+      "id, owner, name, kind, note, created_at, submitter:profiles!repos_submitted_by_fkey ( username, display_name )",
+    )
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return (data ?? []) as RecentRepo[];
+  return (data ?? []) as unknown as RecentRepo[];
 }

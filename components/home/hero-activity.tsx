@@ -41,14 +41,21 @@ export async function HeroActivity() {
       } ${t.reply_count === 1 ? "reply" : "replies"}`,
       at: t.last_activity_at,
     })),
-    ...repos.map((r) => ({
-      key: `r-${r.id}`,
-      icon: "📦",
-      title: `${r.owner}/${r.name}`,
-      href: "/projects",
-      meta: r.kind === "build" ? "new build" : "new pick",
-      at: r.created_at,
-    })),
+    ...repos.map((r) => {
+      const who =
+        r.submitter?.username ?? r.submitter?.display_name ?? "a member";
+      return {
+        key: `r-${r.id}`,
+        icon: "📦",
+        title:
+          r.kind === "build"
+            ? `${who} shared a build.`
+            : `${who} shared something cool.`,
+        href: "/projects",
+        meta: r.note ?? `${r.owner}/${r.name}`,
+        at: r.created_at,
+      };
+    }),
   ]
     .sort((a, b) => (a.at < b.at ? 1 : -1))
     .slice(0, 4);
@@ -84,7 +91,7 @@ export async function HeroActivity() {
                     {item.title}
                   </span>
                 </span>
-                <span className="mt-0.5 block font-mono text-xs text-muted">
+                <span className="mt-0.5 line-clamp-2 block font-mono text-xs text-muted">
                   {item.meta} · {timeAgo(item.at)}
                 </span>
               </Link>
