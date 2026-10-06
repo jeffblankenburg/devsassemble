@@ -6,6 +6,7 @@ import { MobileNav } from "@/components/site/mobile-nav";
 import { EventCard } from "@/components/events/event-card";
 import { HeroActivity } from "@/components/home/hero-activity";
 import { listPublishedEvents } from "@/lib/events/queries";
+import { getSessionUser } from "@/lib/auth/dal";
 
 // ---------------------------------------------------------------------------
 // Content
@@ -84,7 +85,10 @@ function SectionEyebrow({ children }: { children: ReactNode }) {
 // ---------------------------------------------------------------------------
 
 export default async function Home() {
-  const upcoming = await listPublishedEvents({ when: "upcoming", limit: 3 });
+  const [upcoming, user] = await Promise.all([
+    listPublishedEvents({ when: "upcoming", limit: 3 }),
+    getSessionUser(),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -108,11 +112,15 @@ export default async function Home() {
               ))}
             </nav>
             <span className="hidden md:block">
-              <ComicButton href="/login" variant="lime">
-                Sign in
+              <ComicButton href={user ? "/dashboard" : "/login"} variant="lime">
+                {user ? "Dashboard" : "Sign in"}
               </ComicButton>
             </span>
-            <MobileNav items={NAV} ctaHref="/login" ctaLabel="Sign in" />
+            <MobileNav
+              items={NAV}
+              ctaHref={user ? "/dashboard" : "/login"}
+              ctaLabel={user ? "Dashboard" : "Sign in"}
+            />
           </div>
         </div>
       </header>
@@ -145,8 +153,12 @@ export default async function Home() {
                 className="pop-in mt-8 flex flex-col gap-4 sm:flex-row"
                 style={{ animationDelay: "240ms" }}
               >
-                <ComicButton href="/login" variant="blue" size="lg">
-                  Join the community
+                <ComicButton
+                  href={user ? "/dashboard" : "/login"}
+                  variant="blue"
+                  size="lg"
+                >
+                  {user ? "Go to your dashboard" : "Join the community"}
                 </ComicButton>
                 <ComicButton href="/events" variant="ink" size="lg">
                   See upcoming events
