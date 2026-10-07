@@ -16,7 +16,15 @@ export function AppHeader({ user }: { user: SessionUser }) {
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between border-b-[3px] border-brand-ink bg-brand-cream/90 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-brand-cream/75">
       <div className="flex items-center gap-4">
-        <MobileNav items={NAV} ctaHref="/dashboard" ctaLabel="Dashboard" />
+        <MobileNav
+          items={NAV}
+          ctaHref="/dashboard"
+          ctaLabel="Dashboard"
+          secondaryItems={
+            user.role !== "member" ? [{ href: "/admin", label: "Admin" }] : []
+          }
+          signOutAction={signOut}
+        />
         <Logo priority />
         <nav className="hidden gap-4 md:flex">
           {NAV.map((item) => (
@@ -35,7 +43,7 @@ export function AppHeader({ user }: { user: SessionUser }) {
         {user.role !== "member" && (
           <Link
             href="/admin"
-            className="rounded-md border-ink bg-brand-purple px-3 py-1 font-display text-sm uppercase text-white shadow-comic-sm"
+            className="hidden rounded-md border-ink bg-brand-purple px-3 py-1 font-display text-sm uppercase text-white shadow-comic-sm md:inline-block"
           >
             Admin
           </Link>
@@ -46,7 +54,7 @@ export function AppHeader({ user }: { user: SessionUser }) {
         >
           {user.username ?? "Profile"}
         </Link>
-        <form action={signOut}>
+        <form action={signOut} className="hidden md:block">
           <button
             type="submit"
             className="rounded-md border-ink bg-white px-3 py-1 font-display text-sm uppercase text-brand-ink shadow-comic-sm hover:bg-brand-lime"

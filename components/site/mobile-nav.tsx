@@ -8,15 +8,21 @@ type NavItem = { href: string; label: string };
 /**
  * Mobile hamburger menu. Shown only below `md`; the desktop nav handles ≥ md.
  * Renders a full-width dropdown anchored to the (sticky/positioned) header.
+ * `secondaryItems` and `signOutAction` hold controls that live in the header
+ * bar at ≥ md and fold into this menu on smaller screens.
  */
 export function MobileNav({
   items,
   ctaHref,
   ctaLabel,
+  secondaryItems = [],
+  signOutAction,
 }: {
   items: NavItem[];
   ctaHref: string;
   ctaLabel: string;
+  secondaryItems?: NavItem[];
+  signOutAction?: (formData: FormData) => void | Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -64,6 +70,16 @@ export function MobileNav({
                 {item.label}
               </Link>
             ))}
+            {secondaryItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="focus-comic rounded-md px-2 py-2 font-display text-xl uppercase tracking-wide text-brand-ink hover:bg-brand-lime"
+              >
+                {item.label}
+              </Link>
+            ))}
             <Link
               href={ctaHref}
               onClick={() => setOpen(false)}
@@ -71,6 +87,17 @@ export function MobileNav({
             >
               {ctaLabel}
             </Link>
+            {signOutAction && (
+              <form action={signOutAction} className="mt-1">
+                <button
+                  type="submit"
+                  onClick={() => setOpen(false)}
+                  className="focus-comic w-full rounded-md border-ink bg-white px-2 py-2 text-center font-display text-xl uppercase tracking-wide text-brand-ink shadow-comic-sm hover:bg-brand-lime"
+                >
+                  Sign out
+                </button>
+              </form>
+            )}
           </nav>
         </div>
       )}

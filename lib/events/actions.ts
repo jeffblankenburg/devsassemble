@@ -153,6 +153,7 @@ export async function setRsvp(formData: FormData): Promise<void> {
     );
   if (error) throw error;
 
+  revalidatePath("/events");
   if (slug) revalidatePath(`/events/${slug}`);
 }
 
@@ -170,6 +171,7 @@ export async function cancelRsvp(formData: FormData): Promise<void> {
     .eq("user_id", user.id);
   if (error) throw error;
 
+  revalidatePath("/events");
   if (slug) revalidatePath(`/events/${slug}`);
 }
 

@@ -71,38 +71,27 @@ export function RsvpControls({
       <input type="hidden" name="slug" value={slug} />
     </>
   );
+  const going = currentStatus === "going";
+  const interested = currentStatus === "interested";
 
+  // Clicking the active status again cancels it (toggle off).
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <form action={setRsvp}>
+      <form action={going ? cancelRsvp : setRsvp}>
         {hidden}
         <input type="hidden" name="status" value="going" />
-        <SubmitButton variant={currentStatus === "going" ? "lime" : "ink"} size="lg">
-          {currentStatus === "going" ? "✓ You're going" : "I'm going"}
+        <SubmitButton variant={going ? "lime" : "ink"} size="lg">
+          {going ? "✓ You're going" : "I'm going"}
         </SubmitButton>
       </form>
 
-      <form action={setRsvp}>
+      <form action={interested ? cancelRsvp : setRsvp}>
         {hidden}
         <input type="hidden" name="status" value="interested" />
-        <SubmitButton
-          variant={currentStatus === "interested" ? "purple" : "ink"}
-        >
-          {currentStatus === "interested" ? "✓ Interested" : "Interested"}
+        <SubmitButton variant={interested ? "purple" : "ink"}>
+          {interested ? "✓ Interested" : "Interested"}
         </SubmitButton>
       </form>
-
-      {currentStatus && (
-        <form action={cancelRsvp}>
-          {hidden}
-          <button
-            type="submit"
-            className="focus-comic font-display text-sm uppercase tracking-wide text-brand-ink/60 underline underline-offset-4 hover:text-brand-purple"
-          >
-            Cancel RSVP
-          </button>
-        </form>
-      )}
     </div>
   );
 }

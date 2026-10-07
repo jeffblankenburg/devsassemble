@@ -20,8 +20,8 @@ export function NextEvent({ event }: { event: EventRow }) {
       <div
         className={`flex w-16 shrink-0 flex-col items-center justify-center rounded-md border-ink ${ACCENT[event.accent]} py-1.5 font-display leading-none`}
       >
-        <span className="text-xs uppercase tracking-widest">{d.month}</span>
-        <span className="text-2xl">{d.day}</span>
+        <span className="text-sm uppercase tracking-wide">{d.month}</span>
+        <span className="text-3xl">{d.day}</span>
       </div>
       <div className="min-w-0">
         <span className="font-mono text-[10px] uppercase tracking-widest text-muted">

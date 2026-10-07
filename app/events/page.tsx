@@ -4,7 +4,8 @@ import { PublicHeader } from "@/components/site/public-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { EventCard } from "@/components/events/event-card";
 import { CalendarSubscribe } from "@/components/events/calendar-subscribe";
-import { listPublishedEvents } from "@/lib/events/queries";
+import { listPublishedEvents, getUserRsvpMap } from "@/lib/events/queries";
+import { getSessionUser } from "@/lib/auth/dal";
 
 export const metadata: Metadata = {
   title: "Events",
@@ -21,10 +22,20 @@ function Eyebrow({ children }: { children: ReactNode }) {
 }
 
 export default async function EventsPage() {
-  const [upcoming, past] = await Promise.all([
+  const [upcoming, past, user] = await Promise.all([
     listPublishedEvents({ when: "upcoming" }),
     listPublishedEvents({ when: "past", limit: 12 }),
+    getSessionUser(),
   ]);
+
+  const rsvpMap = user
+    ? await getUserRsvpMap(user.id, [...new Set(upcoming.map((e) => e.id))])
+    : {};
+  const rsvpFor = (eventId: string) => ({
+    currentStatus: rsvpMap[eventId] ?? null,
+    isAuthed: Boolean(user),
+    loginHref: "/login?next=/events",
+  });
 
   return (
     <>
@@ -49,7 +60,11 @@ export default async function EventsPage() {
           {upcoming.length > 0 ? (
             <div className="grid gap-4">
               {upcoming.map((event) => (
-                <EventCard key={event.occurrenceKey ?? event.id} event={event} />
+                <EventCard
+                  key={event.occurrenceKey ?? event.id}
+                  event={event}
+                  rsvp={rsvpFor(event.id)}
+                />
               ))}
             </div>
           ) : (

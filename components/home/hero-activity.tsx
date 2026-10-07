@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { listTopics } from "@/lib/forum/queries";
@@ -13,11 +14,13 @@ function initial(name: string | null, username: string) {
 type ActivityItem = {
   key: string;
   icon: string;
-  title: string;
+  title: ReactNode;
   href: string;
   meta: string;
   at: string;
 };
+
+const highlight = "text-brand-blue";
 
 /**
  * Compact activity panel for the hero's right column — a unified "Latest" feed
@@ -44,29 +47,36 @@ export async function HeroActivity() {
       at: t.last_activity_at,
     })),
     ...repos.map((r) => {
-      const who =
-        r.submitter?.username ?? r.submitter?.display_name ?? "a member";
+      const who = r.submitter?.username
+        ? `@${r.submitter.username}`
+        : (r.submitter?.display_name ?? "a member");
       return {
         key: `r-${r.id}`,
         icon: "📦",
-        title:
-          r.kind === "build"
-            ? `${who} shared a build.`
-            : `${who} shared something cool.`,
+        title: (
+          <>
+            {who} shared <span className={highlight}>{r.name}</span>
+          </>
+        ),
         href: "/projects",
-        meta: r.note ?? `${r.owner}/${r.name}`,
+        meta: "",
         at: r.created_at,
       };
     }),
     ...tools.map((t) => {
-      const who =
-        t.submitter?.username ?? t.submitter?.display_name ?? "a member";
+      const who = t.submitter?.username
+        ? `@${t.submitter.username}`
+        : (t.submitter?.display_name ?? "a member");
       return {
         key: `tool-${t.id}`,
         icon: "🛠️",
-        title: `${who} shared a tool.`,
+        title: (
+          <>
+            {who} shared <span className={highlight}>{t.name}</span>
+          </>
+        ),
         href: "/tools",
-        meta: t.name,
+        meta: "",
         at: t.created_at,
       };
     }),
@@ -101,12 +111,13 @@ export async function HeroActivity() {
                   <span aria-hidden className="shrink-0 text-base">
                     {item.icon}
                   </span>
-                  <span className="line-clamp-1 font-display text-base uppercase tracking-wide text-brand-ink">
+                  <span className="line-clamp-2 pr-1 font-display text-base uppercase tracking-wide text-brand-ink">
                     {item.title}
                   </span>
                 </span>
                 <span className="mt-0.5 line-clamp-2 block font-mono text-xs text-muted">
-                  {item.meta} · {timeAgo(item.at)}
+                  {item.meta ? `${item.meta} · ` : ""}
+                  {timeAgo(item.at)}
                 </span>
               </Link>
             </li>

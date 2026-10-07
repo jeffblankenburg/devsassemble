@@ -286,6 +286,27 @@ export async function getUpcomingEventsForUser(
     .slice(0, limit);
 }
 
+/** The current user's RSVP status for many events at once, keyed by event id. */
+export async function getUserRsvpMap(
+  userId: string,
+  eventIds: string[],
+): Promise<Record<string, RsvpStatus>> {
+  if (eventIds.length === 0) return {};
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("rsvps")
+    .select("event_id, status")
+    .eq("user_id", userId)
+    .in("event_id", eventIds);
+  if (error) throw error;
+
+  const map: Record<string, RsvpStatus> = {};
+  for (const row of (data ?? []) as { event_id: string; status: RsvpStatus }[]) {
+    map[row.event_id] = row.status;
+  }
+  return map;
+}
+
 /** The current user's RSVP status for an event, or null. */
 export async function getUserRsvp(
   eventId: string,
