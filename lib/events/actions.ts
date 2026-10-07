@@ -20,21 +20,25 @@ function nullIfEmpty(value: string | undefined | null): string | null {
 }
 
 function parseEventForm(formData: FormData) {
+  // Conditionally-rendered fields (location/url/recurrence_until) are absent
+  // from the form, so formData.get() returns null — coerce to undefined so the
+  // optional schemas accept them (null would fail validation).
+  const g = (k: string) => formData.get(k) ?? undefined;
   return eventSchema.safeParse({
-    title: formData.get("title"),
-    slug: formData.get("slug"),
-    summary: formData.get("summary"),
-    description: formData.get("description"),
-    starts_at: formData.get("starts_at"),
-    ends_at: formData.get("ends_at"),
-    timezone: formData.get("timezone"),
-    location: formData.get("location"),
-    url: formData.get("url"),
-    host: formData.get("host"),
-    accent: formData.get("accent"),
-    status: formData.get("status"),
-    recurrence: formData.get("recurrence") ?? "none",
-    recurrence_until: formData.get("recurrence_until"),
+    title: g("title"),
+    slug: g("slug"),
+    summary: g("summary"),
+    description: g("description"),
+    starts_at: g("starts_at"),
+    ends_at: g("ends_at"),
+    timezone: g("timezone"),
+    location: g("location"),
+    url: g("url"),
+    host: g("host"),
+    accent: g("accent"),
+    status: g("status"),
+    recurrence: g("recurrence") ?? "none",
+    recurrence_until: g("recurrence_until"),
   });
 }
 
