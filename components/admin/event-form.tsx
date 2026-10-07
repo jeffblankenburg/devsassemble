@@ -151,15 +151,18 @@ export function EventForm({
         </Field>
       )}
 
-      <Field
-        label="Session type"
-        hint="A short descriptor shown on cards — like Live build stream or Community roundtable."
-      >
-        <input
+      <Field label="Session type" hint="Shown on event cards.">
+        <ChoiceChips
           name="host"
-          defaultValue={event?.host ?? ""}
-          placeholder="Live build stream"
-          className={inputClass}
+          defaultValue={event?.host ?? "Live build stream"}
+          options={[
+            { value: "Live build stream", label: "Live build stream" },
+            { value: "Community roundtable", label: "Community roundtable" },
+            { value: "Workshop", label: "Workshop" },
+            { value: "Talk", label: "Talk" },
+            { value: "Q&A", label: "Q&A" },
+            { value: "Social", label: "Social" },
+          ]}
         />
       </Field>
 
@@ -171,7 +174,7 @@ export function EventForm({
           name="recurrence"
           defaultValue={event?.recurrence ?? "none"}
           options={[
-            { value: "none", label: "One-time" },
+            { value: "none", label: "Never" },
             { value: "weekly", label: "Weekly" },
             { value: "biweekly", label: "Every 2 weeks" },
             { value: "monthly", label: "Monthly" },
