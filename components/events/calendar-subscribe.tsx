@@ -12,8 +12,11 @@ export function CalendarSubscribe() {
   const webcalUrl = base
     ? icsUrl.replace(/^https?:\/\//, "webcal://")
     : "/events/calendar.ics";
-  const googleUrl = base
-    ? `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(icsUrl)}`
+  // Google fetches the cid URL from its own servers, so it must be publicly
+  // reachable (never localhost) and is most reliable as a webcal:// link.
+  const isPublic = base.startsWith("https://");
+  const googleUrl = isPublic
+    ? `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcalUrl)}`
     : null;
 
   return (
