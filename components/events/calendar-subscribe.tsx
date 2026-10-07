@@ -40,7 +40,8 @@ export function CalendarSubscribe() {
         )}
         <a
           href="/events/calendar.ics"
-          className="focus-comic font-mono text-xs uppercase tracking-widest text-muted hover:text-brand-blue"
+          download="devsassemble.ics"
+          className={`${btn} bg-surface text-brand-ink`}
         >
           Download .ics
         </a>
