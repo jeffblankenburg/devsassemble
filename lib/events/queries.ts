@@ -107,9 +107,65 @@ export async function listAllEventsForAdmin(): Promise<EventRow[]> {
   const { data, error } = await supabase
     .from("events")
     .select(EVENT_COLUMNS)
-    .order("starts_at", { ascending: false });
+    .order("starts_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as EventRow[];
+}
+
+export type AdminEventFilter =
+  | "all"
+  | "published"
+  | "draft"
+  | "cancelled"
+  | "past";
+
+/**
+ * Filter + sort events for the admin list and count each bucket. Reads the
+ * current time here (a server helper) so the component render stays pure.
+ * "Past" means the event has already started, regardless of status; the
+ * status filters show only still-upcoming events of that status.
+ */
+export function filterAdminEvents(
+  events: EventRow[],
+  filter: AdminEventFilter,
+): {
+  events: EventRow[];
+  counts: Record<AdminEventFilter, number>;
+  pastIds: Set<string>;
+} {
+  const now = Date.now();
+  const isPast = (e: EventRow) => new Date(e.starts_at).getTime() < now;
+  const pastIds = new Set(events.filter(isPast).map((e) => e.id));
+
+  const counts: Record<AdminEventFilter, number> = {
+    all: events.length,
+    published: events.filter((e) => e.status === "published" && !isPast(e))
+      .length,
+    draft: events.filter((e) => e.status === "draft" && !isPast(e)).length,
+    cancelled: events.filter((e) => e.status === "cancelled" && !isPast(e))
+      .length,
+    past: events.filter(isPast).length,
+  };
+
+  const match = (e: EventRow): boolean => {
+    switch (filter) {
+      case "all":
+        return true;
+      case "past":
+        return isPast(e);
+      default:
+        return e.status === filter && !isPast(e);
+    }
+  };
+
+  const sorted = events.filter(match).sort((a, b) => {
+    const ta = new Date(a.starts_at).getTime();
+    const tb = new Date(b.starts_at).getTime();
+    // Past: most recent first. Everything else: soonest upcoming first.
+    return filter === "past" ? tb - ta : ta - tb;
+  });
+
+  return { events: sorted, counts, pastIds };
 }
 
 export type RsvpSummary = { going: number; interested: number };
