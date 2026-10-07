@@ -19,6 +19,7 @@ export default async function ProfileSettingsPage() {
     .eq("id", user.id)
     .single();
 
+  const isAdmin = user.role === "admin" || user.role === "moderator";
   const cooldown = heroCooldown(profile?.hero_generated_at ?? null);
 
   return (
@@ -37,8 +38,8 @@ export default async function ProfileSettingsPage() {
           heroAvatar={profile?.hero_avatar_url ?? null}
           preference={profile?.avatar_preference === "hero" ? "hero" : "base"}
           hasGithub={Boolean(profile?.github_user_id)}
-          canGenerate={cooldown.canGenerate}
-          nextAvailableLabel={cooldown.nextLabel}
+          canGenerate={isAdmin || cooldown.canGenerate}
+          nextAvailableLabel={isAdmin ? null : cooldown.nextLabel}
           heroEnabled={heroAvatarEnabled()}
         />
       </div>

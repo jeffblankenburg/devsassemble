@@ -84,6 +84,15 @@ export function AvatarStudio({
         />
       </div>
 
+      {heroAvatar && (
+        <a
+          href={`${heroAvatar}?download=devsassemble-hero.png`}
+          className="focus-comic mt-4 inline-flex w-fit items-center gap-2 rounded-md border-ink bg-brand-lime px-4 py-2 font-display text-sm uppercase text-brand-ink shadow-comic-sm transition-transform hover:-translate-y-0.5"
+        >
+          ⬇ Download full-size hero
+        </a>
+      )}
+
       {/* Source */}
       <div className="mt-6">
         <h3 className="font-display text-lg uppercase tracking-wide text-brand-ink">

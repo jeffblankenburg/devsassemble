@@ -31,17 +31,20 @@ export function heroCooldown(heroGeneratedAt: string | null): {
 }
 
 const HERO_PROMPT =
-  "Transform the person in this photo into a bold comic-book SUPERHERO portrait. " +
+  "Transform the FIRST image (a person) into a bold comic-book SUPERHERO portrait. " +
   "Keep their face clearly recognizable — same features, hairstyle, and skin tone. " +
   "Heavy black ink outlines, Ben-Day halftone shading, dramatic comic lighting, and " +
   "vivid electric-blue, lime-green, and purple accents on a warm cream background. " +
-  "Head-and-shoulders, square composition, confident heroic pose. " +
+  "Head-and-shoulders to chest, square composition, confident heroic pose. " +
+  "Give the costume a prominent CHEST EMBLEM that recreates the logo shown in the SECOND " +
+  "image — the DevsAssemble 'DA' monogram — centered and clearly visible on the chest, " +
+  "matching its bold comic style and electric-blue/lime-green/purple colors. " +
   // Safety / appropriateness constraints — keep it tasteful for all genders.
   "The character must be FULLY CLOTHED in a modest, practical, tasteful superhero costume " +
   "with full coverage. Absolutely no sexualization, no revealing or skin-tight-for-effect " +
   "clothing, no exaggerated or emphasized body parts, no suggestive poses. Respectful, " +
   "family-friendly, and appropriate for all audiences regardless of gender. " +
-  "No text, no watermark, no logos.";
+  "No extra text or watermark beyond the chest emblem.";
 
 export type ImageData = { base64: string; mimeType: string };
 
@@ -58,6 +61,13 @@ export async function fetchImageAsBase64(url: string): Promise<ImageData | null>
   }
 }
 
+/** Load the DevsAssemble icon to place on the hero's chest (the second image). */
+async function fetchBrandLogo(): Promise<ImageData | null> {
+  const base = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!base) return null;
+  return fetchImageAsBase64(`${base.replace(/\/$/, "")}/logo-icon.png`);
+}
+
 export type GenerateResult = { image: ImageData | null; error?: string };
 
 /** Send the source image + hero prompt to Gemini; return the generated image. */
@@ -68,25 +78,22 @@ export async function generateHeroImage(
   if (!key) return { image: null, error: "GEMINI_API_KEY is not set." };
   const model = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
 
+  const logo = await fetchBrandLogo();
+  const requestParts: Array<Record<string, unknown>> = [
+    { text: HERO_PROMPT },
+    { inline_data: { mime_type: source.mimeType, data: source.base64 } },
+  ];
+  if (logo) {
+    requestParts.push({
+      inline_data: { mime_type: logo.mimeType, data: logo.base64 },
+    });
+  }
+
   try {
     const res = await fetch(`${ENDPOINT}/${model}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: HERO_PROMPT },
-              {
-                inline_data: {
-                  mime_type: source.mimeType,
-                  data: source.base64,
-                },
-              },
-            ],
-          },
-        ],
-      }),
+      body: JSON.stringify({ contents: [{ parts: requestParts }] }),
     });
 
     if (!res.ok) {

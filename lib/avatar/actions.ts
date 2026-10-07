@@ -137,7 +137,9 @@ export async function generateHeroAvatar(
     return { error: "Add a photo first (GitHub or upload) to transform." };
   }
 
-  if (profile.hero_generated_at) {
+  // Admins/mods can regenerate without limit; members are once per week.
+  const isAdmin = user.role === "admin" || user.role === "moderator";
+  if (!isAdmin && profile.hero_generated_at) {
     const elapsed = Date.now() - new Date(profile.hero_generated_at).getTime();
     if (elapsed < WEEK_MS) {
       const next = new Date(
