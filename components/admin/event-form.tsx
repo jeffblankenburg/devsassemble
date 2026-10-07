@@ -89,14 +89,20 @@ export function EventForm({
         <Field label="Starts" hint="Interpreted as the timezone below.">
           <ComicDateTimePicker
             name="starts_at"
-            defaultValue={event ? toDatetimeLocalValue(event.starts_at) : undefined}
+            defaultValue={
+              event
+                ? toDatetimeLocalValue(event.starts_at, event.timezone)
+                : undefined
+            }
           />
         </Field>
         <Field label="Ends (optional)">
           <ComicDateTimePicker
             name="ends_at"
             defaultValue={
-              event?.ends_at ? toDatetimeLocalValue(event.ends_at) : undefined
+              event?.ends_at
+                ? toDatetimeLocalValue(event.ends_at, event.timezone)
+                : undefined
             }
           />
         </Field>

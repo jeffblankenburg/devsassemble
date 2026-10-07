@@ -1,6 +1,10 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import {
+  upcomingOccurrences,
+  latestPastOccurrence,
+} from "@/lib/events/recurrence";
 
 export type EventAccent = "blue" | "lime" | "purple";
 export type EventStatus = "draft" | "published" | "cancelled";
@@ -29,40 +33,59 @@ export type EventRow = {
   status: EventStatus;
   recurrence: RecurrenceFreq;
   recurrence_until: string | null;
+  recurrence_exceptions: string[];
   is_live: boolean;
   stream_embed_url: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  // Set when a row is a materialized occurrence of a recurring series — a
+  // stable, unique React key (several occurrences share the same `id`).
+  occurrenceKey?: string;
 };
 
 const EVENT_COLUMNS =
-  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, is_virtual, host, accent, status, recurrence, recurrence_until, is_live, stream_embed_url, created_by, created_at, updated_at";
+  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, is_virtual, host, accent, status, recurrence, recurrence_until, recurrence_exceptions, is_live, stream_embed_url, created_by, created_at, updated_at";
 
-/** Published events, upcoming (ascending) or past (descending). RLS-safe. */
+/** How many upcoming occurrences of each recurring series to surface. */
+const OCCURRENCES_AHEAD = 2;
+
+/**
+ * Published events, upcoming (ascending) or past (descending). RLS-safe.
+ *
+ * Recurring events are stored as a single row; we expand them at read time so
+ * the next occurrences appear even after the base `starts_at` has passed. We
+ * therefore fetch all published rows and split in JS rather than filtering by
+ * `starts_at` in SQL.
+ */
 export async function listPublishedEvents(opts?: {
   when?: "upcoming" | "past";
   limit?: number;
 }): Promise<EventRow[]> {
   const supabase = await createClient();
-  const nowIso = new Date().toISOString();
+  const now = new Date();
   const when = opts?.when ?? "upcoming";
 
-  let query = supabase
+  const { data, error } = await supabase
     .from("events")
     .select(EVENT_COLUMNS)
     .eq("status", "published");
-
-  query =
-    when === "upcoming"
-      ? query.gte("starts_at", nowIso).order("starts_at", { ascending: true })
-      : query.lt("starts_at", nowIso).order("starts_at", { ascending: false });
-
-  if (opts?.limit) query = query.limit(opts.limit);
-
-  const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as EventRow[];
+  const rows = (data ?? []) as EventRow[];
+
+  let result: EventRow[];
+  if (when === "upcoming") {
+    result = rows
+      .flatMap((e) => upcomingOccurrences(e, now, OCCURRENCES_AHEAD))
+      .sort((a, b) => (a.starts_at < b.starts_at ? -1 : 1));
+  } else {
+    result = rows
+      .map((e) => latestPastOccurrence(e, now))
+      .filter((e): e is EventRow => e !== null)
+      .sort((a, b) => (a.starts_at > b.starts_at ? -1 : 1));
+  }
+
+  return opts?.limit ? result.slice(0, opts.limit) : result;
 }
 
 /** A single event by its permanent slug. Visibility follows RLS. */
@@ -133,8 +156,9 @@ export function filterAdminEvents(
   counts: Record<AdminEventFilter, number>;
   pastIds: Set<string>;
 } {
-  const now = Date.now();
-  const isPast = (e: EventRow) => new Date(e.starts_at).getTime() < now;
+  const now = new Date();
+  // A recurring series is "past" only once it has no upcoming occurrence left.
+  const isPast = (e: EventRow) => upcomingOccurrences(e, now, 1).length === 0;
   const pastIds = new Set(events.filter(isPast).map((e) => e.id));
 
   const counts: Record<AdminEventFilter, number> = {
@@ -246,17 +270,20 @@ export async function getUpcomingEventsForUser(
   const ids = (rsvpRows ?? []).map((r) => (r as { event_id: string }).event_id);
   if (ids.length === 0) return [];
 
-  const nowIso = new Date().toISOString();
+  // Fetch all their RSVP'd published events, then expand recurring series so
+  // the next occurrence shows even once the base start has passed.
   const { data, error } = await supabase
     .from("events")
     .select(EVENT_COLUMNS)
     .in("id", ids)
-    .eq("status", "published")
-    .gte("starts_at", nowIso)
-    .order("starts_at", { ascending: true })
-    .limit(limit);
+    .eq("status", "published");
   if (error) throw error;
-  return (data ?? []) as EventRow[];
+
+  const now = new Date();
+  return ((data ?? []) as EventRow[])
+    .flatMap((e) => upcomingOccurrences(e, now, 1))
+    .sort((a, b) => (a.starts_at < b.starts_at ? -1 : 1))
+    .slice(0, limit);
 }
 
 /** The current user's RSVP status for an event, or null. */

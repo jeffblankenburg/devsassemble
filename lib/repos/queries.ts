@@ -38,16 +38,17 @@ const REPO_SELECT =
 
 export async function listRepos(opts?: {
   sort?: "new" | "top";
-  kind?: RepoKind;
 }): Promise<RepoItem[]> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  let query = supabase.from("repos").select(REPO_SELECT);
-  if (opts?.kind) query = query.eq("kind", opts.kind);
-  query = query.order("created_at", { ascending: false }).limit(100);
+  const query = supabase
+    .from("repos")
+    .select(REPO_SELECT)
+    .order("created_at", { ascending: false })
+    .limit(100);
 
   const { data, error } = await query;
   if (error) throw error;

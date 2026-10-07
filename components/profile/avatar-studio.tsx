@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Image from "next/image";
 import {
   generateHeroAvatar,
@@ -12,26 +12,80 @@ import {
 } from "@/lib/avatar/actions";
 import { ComicButton } from "@/components/brand/comic-button";
 
-function Avatar({ src, label }: { src: string | null; label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1">
+/** A top avatar that doubles as the "show the community" selector. */
+function SelectableAvatar({
+  src,
+  label,
+  pref,
+  active,
+  selectable,
+}: {
+  src: string | null;
+  label: string;
+  pref: "base" | "hero";
+  active: boolean;
+  selectable: boolean;
+}) {
+  const img = (
+    <span className="relative">
       {src ? (
         <Image
           src={src}
           alt={label}
           width={88}
           height={88}
-          className="h-[88px] w-[88px] rounded-full border-ink object-cover shadow-comic"
+          className={`h-[88px] w-[88px] rounded-full border-ink object-cover shadow-comic ${
+            active ? "ring-2 ring-brand-blue ring-offset-2" : ""
+          }`}
         />
       ) : (
         <span className="flex h-[88px] w-[88px] items-center justify-center rounded-full border-ink bg-brand-cream font-mono text-[10px] text-brand-ink/60 shadow-comic">
           none
         </span>
       )}
-      <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
-        {label}
-      </span>
-    </div>
+      {active && (
+        <span
+          aria-hidden
+          className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border-ink bg-brand-blue text-sm font-bold text-white shadow-comic-sm"
+        >
+          ✓
+        </span>
+      )}
+    </span>
+  );
+
+  const caption = (
+    <span
+      className={`font-mono text-[10px] uppercase tracking-widest ${
+        active ? "font-bold text-brand-blue" : "text-muted"
+      }`}
+    >
+      {label}
+    </span>
+  );
+
+  if (!selectable) {
+    return (
+      <div className="flex flex-col items-center gap-1 opacity-60">
+        {img}
+        {caption}
+      </div>
+    );
+  }
+
+  return (
+    <form action={setAvatarPreference}>
+      <input type="hidden" name="preference" value={pref} />
+      <button
+        type="submit"
+        aria-pressed={active}
+        title={active ? `${label} is shown to the community` : `Show ${label} to the community`}
+        className="focus-comic flex flex-col items-center gap-1 rounded-md transition-transform hover:-translate-y-0.5"
+      >
+        {img}
+        {caption}
+      </button>
+    </form>
   );
 }
 
@@ -65,6 +119,7 @@ export function AvatarStudio({
     AvatarState,
     FormData
   >(generateHeroAvatar, {});
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   return (
     <div className="rounded-[var(--radius-comic)] border-ink bg-surface p-6 shadow-comic">
@@ -72,29 +127,26 @@ export function AvatarStudio({
         Your avatar
       </h2>
       <p className="mt-1 text-sm text-brand-ink/70">
-        Pick your photo, optionally turn it into a superhero, and choose which
-        one the community sees.
+        Pick your photo, optionally turn it into a superhero, and tap the one
+        you want the community to see.
       </p>
 
       <div className="mt-5 flex flex-wrap items-end gap-6">
-        <Avatar
+        <SelectableAvatar
           src={baseAvatar}
-          label={preference === "base" ? "Normal · live" : "Normal"}
+          label="Normal"
+          pref="base"
+          active={preference === "base"}
+          selectable={Boolean(baseAvatar)}
         />
-        <Avatar
+        <SelectableAvatar
           src={heroAvatar}
-          label={preference === "hero" ? "Hero · live" : "Hero"}
+          label="Hero"
+          pref="hero"
+          active={preference === "hero"}
+          selectable={Boolean(heroAvatar)}
         />
       </div>
-
-      {heroAvatar && (
-        <a
-          href={`${heroAvatar}?download=devsassemble-hero.png`}
-          className="focus-comic mt-4 inline-flex w-fit items-center gap-2 rounded-md border-ink bg-brand-lime px-4 py-2 font-display text-sm uppercase text-brand-ink shadow-comic-sm transition-transform hover:-translate-y-0.5"
-        >
-          ⬇ Download full-size hero
-        </a>
-      )}
 
       {/* Source */}
       <div className="mt-6">
@@ -129,6 +181,52 @@ export function AvatarStudio({
           <p className="mt-2 text-sm text-brand-purple">{uploadState.error}</p>
         )}
       </div>
+
+      {/* Hero gallery — shown above generation once you've made one */}
+      {heroGallery.length > 0 && (
+        <div className="mt-6 border-t-2 border-brand-ink/10 pt-5">
+          <h3 className="font-display text-lg uppercase tracking-wide text-brand-ink">
+            Your heroes
+          </h3>
+          <p className="mt-1 text-sm text-brand-ink/70">
+            Every hero you&apos;ve made — tap to see it full size, or set any as
+            your avatar.
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-4">
+            {heroGallery.map((url) => (
+              <li key={url} className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLightbox(url)}
+                  aria-label="View full size"
+                  className="focus-comic rounded-md transition-transform hover:-translate-y-0.5"
+                >
+                  <Image
+                    src={url}
+                    alt="Past hero"
+                    width={80}
+                    height={80}
+                    className={`h-20 w-20 rounded-md border-ink object-cover shadow-comic-sm ${
+                      url === heroAvatar
+                        ? "ring-2 ring-brand-blue ring-offset-2"
+                        : ""
+                    }`}
+                  />
+                </button>
+                <form action={setActiveHero}>
+                  <input type="hidden" name="url" value={url} />
+                  <button
+                    type="submit"
+                    className="focus-comic rounded-md border-[2px] border-brand-ink bg-surface px-2 py-0.5 font-mono text-[10px] uppercase text-brand-ink hover:bg-brand-lime"
+                  >
+                    {url === heroAvatar ? "Active" : "Use"}
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Hero generation */}
       {heroEnabled && (
@@ -182,76 +280,31 @@ export function AvatarStudio({
         </div>
       )}
 
-      {/* Display toggle */}
-      {heroAvatar && (
-        <div className="mt-6 border-t-2 border-brand-ink/10 pt-5">
-          <h3 className="font-display text-lg uppercase tracking-wide text-brand-ink">
-            Show the community
-          </h3>
-          <div className="mt-2 flex gap-2">
-            {(["base", "hero"] as const).map((pref) => (
-              <form key={pref} action={setAvatarPreference}>
-                <input type="hidden" name="preference" value={pref} />
-                <button
-                  type="submit"
-                  aria-pressed={preference === pref}
-                  className={`${btn} ${
-                    preference === pref
-                      ? "bg-brand-blue text-white"
-                      : "bg-surface text-brand-ink hover:bg-brand-lime"
-                  }`}
-                >
-                  {pref === "base" ? "Normal" : "Superhero"}
-                </button>
-              </form>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {heroGallery.length > 0 && (
-        <div className="mt-6 border-t-2 border-brand-ink/10 pt-5">
-          <h3 className="font-display text-lg uppercase tracking-wide text-brand-ink">
-            Your heroes
-          </h3>
-          <p className="mt-1 text-sm text-brand-ink/70">
-            Every hero you&apos;ve made — set any as your avatar, or download it.
-          </p>
-          <ul className="mt-3 flex flex-wrap gap-4">
-            {heroGallery.map((url) => (
-              <li key={url} className="flex flex-col items-center gap-2">
-                <Image
-                  src={url}
-                  alt="Past hero"
-                  width={80}
-                  height={80}
-                  className={`h-20 w-20 rounded-md border-ink object-cover shadow-comic-sm ${
-                    url === heroAvatar
-                      ? "ring-2 ring-brand-blue ring-offset-2"
-                      : ""
-                  }`}
-                />
-                <div className="flex gap-1">
-                  <form action={setActiveHero}>
-                    <input type="hidden" name="url" value={url} />
-                    <button
-                      type="submit"
-                      className="focus-comic rounded-md border-[2px] border-brand-ink bg-surface px-2 py-0.5 font-mono text-[10px] uppercase text-brand-ink hover:bg-brand-lime"
-                    >
-                      {url === heroAvatar ? "Active" : "Use"}
-                    </button>
-                  </form>
-                  <a
-                    href={`${url}?download=devsassemble-hero.png`}
-                    aria-label="Download"
-                    className="focus-comic rounded-md border-[2px] border-brand-ink bg-surface px-2 py-0.5 font-mono text-[10px] uppercase text-brand-ink hover:bg-brand-lime"
-                  >
-                    ⬇
-                  </a>
-                </div>
-              </li>
-            ))}
-          </ul>
+      {/* Full-screen hero viewer */}
+      {lightbox && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Hero preview"
+          onClick={() => setLightbox(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/80 p-6 backdrop-blur-sm"
+        >
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            aria-label="Close"
+            className="focus-comic absolute right-5 top-5 rounded-md border-ink bg-surface px-3 py-1 font-display text-sm uppercase text-brand-ink shadow-comic-sm"
+          >
+            Close ✕
+          </button>
+          <Image
+            src={lightbox}
+            alt="Hero full size"
+            width={768}
+            height={768}
+            onClick={(e) => e.stopPropagation()}
+            className="h-auto max-h-[85vh] w-auto max-w-full rounded-[var(--radius-comic)] border-ink object-contain shadow-comic"
+          />
         </div>
       )}
     </div>

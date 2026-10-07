@@ -16,7 +16,7 @@ export function EventCard({
   event: EventRow;
   goingCount?: number;
 }) {
-  const d = formatDateParts(event.starts_at);
+  const d = formatDateParts(event.starts_at, event.timezone);
 
   return (
     <Link
@@ -36,7 +36,11 @@ export function EventCard({
           {d.time} {tzLabel(event.timezone)}
           {event.host ? ` · ${event.host}` : ""}
         </span>
-        <h3 className="mt-1 font-display text-xl uppercase leading-tight tracking-wide text-brand-ink">
+        <h3
+          className={`mt-1 font-display text-xl uppercase leading-tight tracking-wide text-brand-ink ${
+            event.status === "cancelled" ? "text-brand-ink/50 line-through" : ""
+          }`}
+        >
           {event.title}
         </h3>
         {event.summary && (

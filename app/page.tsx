@@ -301,7 +301,7 @@ export default async function Home() {
             <div className="mt-10 grid gap-4">
               {upcoming.length > 0 ? (
                 upcoming.map((event) => (
-                  <EventCard key={event.id} event={event} />
+                  <EventCard key={event.occurrenceKey ?? event.id} event={event} />
                 ))
               ) : (
                 <p className="rounded-[var(--radius-comic)] border-ink bg-surface p-6 text-center text-brand-ink/70 shadow-comic">

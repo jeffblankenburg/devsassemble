@@ -3,7 +3,6 @@
 import { useActionState } from "react";
 import { submitRepo, type RepoFormState } from "@/lib/repos/actions";
 import { ComicButton } from "@/components/brand/comic-button";
-import { ChoiceChips } from "@/components/ui/choice-chips";
 
 const inputClass =
   "rounded-[var(--radius-comic)] border-ink bg-white px-4 py-3 text-brand-ink outline-none focus:shadow-comic-sm";
@@ -29,18 +28,6 @@ export function SubmitRepoForm() {
         <span className="text-xs text-brand-ink/55">
           We&apos;ll pull the name, description, stars, and language automatically.
         </span>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <span className={labelClass}>Type</span>
-        <ChoiceChips
-          name="kind"
-          defaultValue="recommendation"
-          options={[
-            { value: "build", label: "I built this" },
-            { value: "recommendation", label: "A cool find" },
-          ]}
-        />
       </div>
 
       <div className="flex flex-col gap-1">

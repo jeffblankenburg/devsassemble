@@ -5,15 +5,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, requireUser } from "@/lib/auth/dal";
 import { eventSchema, rsvpStatusEnum } from "@/lib/validation/events";
+import { DEFAULT_TIMEZONE, zonedWallClockToUtcIso } from "@/lib/events/format";
 
 export type EventFormState = { error?: string };
-
-/** Interpret a datetime-local value ("YYYY-MM-DDTHH:mm") as UTC wall-clock. */
-function toUtcIso(local: string): string | null {
-  if (!local) return null;
-  const date = new Date(`${local}Z`);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
-}
 
 function nullIfEmpty(value: string | undefined | null): string | null {
   return value && value.trim() !== "" ? value : null;
@@ -46,7 +40,8 @@ function eventRecordFrom(
   data: ReturnType<typeof eventSchema.parse>,
   formData: FormData,
 ) {
-  const startIso = toUtcIso(data.starts_at);
+  const timezone = nullIfEmpty(data.timezone) ?? DEFAULT_TIMEZONE;
+  const startIso = zonedWallClockToUtcIso(data.starts_at, timezone);
   if (!startIso) return { error: "Invalid start date and time." as const };
 
   return {
@@ -56,8 +51,10 @@ function eventRecordFrom(
       summary: nullIfEmpty(data.summary),
       description: nullIfEmpty(data.description),
       starts_at: startIso,
-      ends_at: data.ends_at ? toUtcIso(data.ends_at) : null,
-      timezone: nullIfEmpty(data.timezone) ?? "America/New_York",
+      ends_at: data.ends_at
+        ? zonedWallClockToUtcIso(data.ends_at, timezone)
+        : null,
+      timezone,
       location: nullIfEmpty(data.location),
       url: nullIfEmpty(data.url),
       is_virtual: formData.get("is_virtual") === "true",
@@ -174,4 +171,49 @@ export async function cancelRsvp(formData: FormData): Promise<void> {
   if (error) throw error;
 
   if (slug) revalidatePath(`/events/${slug}`);
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Add or remove one occurrence date from a recurring event's skip list. */
+async function setOccurrenceSkipped(
+  formData: FormData,
+  skipped: boolean,
+): Promise<void> {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const date = String(formData.get("date") ?? "");
+  if (!id || !ISO_DATE.test(date)) return;
+
+  const supabase = await createClient();
+  const { data: event } = await supabase
+    .from("events")
+    .select("recurrence_exceptions, slug")
+    .eq("id", id)
+    .single();
+  if (!event) return;
+
+  const current: string[] = event.recurrence_exceptions ?? [];
+  const next = skipped
+    ? [...new Set([...current, date])].sort()
+    : current.filter((d) => d !== date);
+
+  const { error } = await supabase
+    .from("events")
+    .update({ recurrence_exceptions: next })
+    .eq("id", id);
+  if (error) throw error;
+
+  revalidatePath("/events");
+  revalidatePath(`/events/${event.slug}`);
+  revalidatePath("/");
+  revalidatePath(`/admin/events/${id}/edit`);
+}
+
+export async function skipOccurrence(formData: FormData): Promise<void> {
+  await setOccurrenceSkipped(formData, true);
+}
+
+export async function restoreOccurrence(formData: FormData): Promise<void> {
+  await setOccurrenceSkipped(formData, false);
 }

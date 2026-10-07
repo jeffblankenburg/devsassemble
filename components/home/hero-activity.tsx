@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { listTopics } from "@/lib/forum/queries";
 import { listRecentRepos } from "@/lib/repos/queries";
+import { listRecentTools } from "@/lib/tools/queries";
 import { listRecentMembers } from "@/lib/profile/queries";
 import { timeAgo } from "@/lib/forum/format";
 
@@ -24,9 +25,10 @@ type ActivityItem = {
  * data. Pre-launch the empty state invites the first post.
  */
 export async function HeroActivity() {
-  const [topics, repos, members] = await Promise.all([
+  const [topics, repos, tools, members] = await Promise.all([
     listTopics({ limit: 4 }),
     listRecentRepos(4),
+    listRecentTools(4),
     listRecentMembers(6),
   ]);
 
@@ -54,6 +56,18 @@ export async function HeroActivity() {
         href: "/projects",
         meta: r.note ?? `${r.owner}/${r.name}`,
         at: r.created_at,
+      };
+    }),
+    ...tools.map((t) => {
+      const who =
+        t.submitter?.username ?? t.submitter?.display_name ?? "a member";
+      return {
+        key: `tool-${t.id}`,
+        icon: "🛠️",
+        title: `${who} shared a tool.`,
+        href: "/tools",
+        meta: t.name,
+        at: t.created_at,
       };
     }),
   ]

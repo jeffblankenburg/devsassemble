@@ -91,3 +91,25 @@ export async function listTools(opts?: {
   }
   return result;
 }
+
+export type RecentTool = {
+  id: string;
+  name: string;
+  url: string;
+  created_at: string;
+  submitter: { username: string | null; display_name: string | null } | null;
+};
+
+/** Newest tools, for the home activity feed. Public read. */
+export async function listRecentTools(limit = 4): Promise<RecentTool[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tools")
+    .select(
+      "id, name, url, created_at, submitter:profiles!tools_submitted_by_fkey ( username, display_name )",
+    )
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as unknown as RecentTool[];
+}

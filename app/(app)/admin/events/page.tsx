@@ -116,7 +116,8 @@ export default async function AdminEventsPage({
                   {event.title}
                 </h2>
                 <p className="font-mono text-xs uppercase tracking-widest text-muted">
-                  {formatFullDate(event.starts_at)} · {formatTime(event.starts_at)}{" "}
+                  {formatFullDate(event.starts_at, event.timezone)} ·{" "}
+                  {formatTime(event.starts_at, event.timezone)}{" "}
                   {tzLabel(event.timezone)}
                 </p>
               </div>

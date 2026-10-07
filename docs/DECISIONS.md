@@ -17,7 +17,7 @@ events, 1 topic + reply) so pages render for review.
 **🔴 Top things to verify first (in a browser, with `npm run dev` on :3005):**
 1. The **RSVP → GitHub OAuth → back-to-event** funnel (the #1 risk). Also check the Supabase GitHub provider callback allows `…/auth/callback` with a `next` query param.
 2. **Markdown XSS** — post `<img src=x onerror=alert(1)>` and `[x](javascript:alert(1))` in a topic/reply; confirm neither executes.
-3. Event times display as intended (UTC wall-clock + tz label — see below).
+3. Event times: pick a time + timezone, stored as true UTC, displayed in the event's zone (see below).
 4. `/events`, `/events/[slug]`, `/u/[username]`, `/discussions`, `/admin/*` render on-brand.
 
 **Not built yet (queued):** home-page live broadcast flag (#35 — needs your Restream plan + embed URL), search (#19), feed (#16). Tasks tracked in the session task list.
@@ -56,12 +56,13 @@ Legend: 🔴 needs your verification · 🟡 a simplification to revisit · 🟢
 - 🟢 Open-redirect hardening: `lib/auth/redirects.ts#safeNext` restricts `next`
   to same-origin absolute paths; applied in the login page, both auth actions,
   and the callback + confirm routes.
-- 🟡 **Event time handling** — times are stored as the admin's wall-clock
-  interpreted as **UTC** and always displayed in **UTC** with a timezone *label*
-  (e.g. "1:00 PM ET"). So the displayed time equals exactly what was entered.
-  This is predictable and bug-free for a single-community listing, but is NOT
-  true multi-timezone handling. Revisit with a TZ library if events ever span
-  zones. See `lib/events/format.ts`.
+- 🟢 **Event time handling** — the admin picks a wall-clock time **and** a
+  timezone; we convert that to a **true UTC instant** for storage (`timestamptz`)
+  and convert back to the event's `timezone` for display, the edit form, and the
+  iCal feed (with `DTSTART;TZID=`). Conversion is DST-safe via `Intl` (no TZ
+  library). Past/upcoming and "is over" checks compare true instants, so they're
+  correct regardless of the viewer's zone. See `lib/events/format.ts`. (Migration
+  `…011_events_true_utc.sql` reinterpreted the old wall-clock-as-UTC rows.)
 - 🟢 **Admin-only event authoring** at launch (per the MVP decision): members
   cannot create events; RLS gates writes to `is_admin()`. Admin UI at
   `/admin/events`.

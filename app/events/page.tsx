@@ -49,7 +49,7 @@ export default async function EventsPage() {
           {upcoming.length > 0 ? (
             <div className="grid gap-4">
               {upcoming.map((event) => (
-                <EventCard key={event.id} event={event} />
+                <EventCard key={event.occurrenceKey ?? event.id} event={event} />
               ))}
             </div>
           ) : (
@@ -71,7 +71,7 @@ export default async function EventsPage() {
             </h2>
             <div className="mt-6 grid gap-4 opacity-90">
               {past.map((event) => (
-                <EventCard key={event.id} event={event} />
+                <EventCard key={event.occurrenceKey ?? event.id} event={event} />
               ))}
             </div>
           </section>

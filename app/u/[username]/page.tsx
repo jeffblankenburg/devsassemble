@@ -114,7 +114,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             </h2>
             <div className="mt-4 grid gap-4">
               {upcoming.map((event) => (
-                <EventCard key={event.id} event={event} />
+                <EventCard key={event.occurrenceKey ?? event.id} event={event} />
               ))}
             </div>
           </section>

@@ -5,14 +5,21 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/redirects";
 
-/** Resolve the site origin for auth redirects (env first, then request host). */
+/** Resolve the site origin for auth redirects. */
 async function getOrigin() {
-  const envUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (envUrl) return envUrl.replace(/\/$/, "");
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  return `${proto}://${host}`;
+  const proto = h.get("x-forwarded-proto") ?? "http";
+
+  // In local dev, always trust the actual request host so OAuth returns to
+  // whatever localhost port you're on — not the configured site URL.
+  if (process.env.NODE_ENV === "development" && host) {
+    return `${proto}://${host}`;
+  }
+
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (envUrl) return envUrl.replace(/\/$/, "");
+  return host ? `${proto}://${host}` : "";
 }
 
 /** Start the GitHub OAuth flow, then redirect the browser to GitHub. */

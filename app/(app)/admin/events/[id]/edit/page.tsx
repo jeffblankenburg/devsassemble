@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/dal";
 import { getEventById } from "@/lib/events/queries";
 import { EventForm } from "@/components/admin/event-form";
+import { OccurrenceManager } from "@/components/admin/occurrence-manager";
 
 export const metadata: Metadata = { title: "Edit event" };
 
@@ -24,6 +25,7 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
       <div className="mt-8 rounded-[var(--radius-comic)] border-ink bg-surface p-6 shadow-comic">
         <EventForm mode="edit" event={event} />
       </div>
+      <OccurrenceManager event={event} />
     </main>
   );
 }

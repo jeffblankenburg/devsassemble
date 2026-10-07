@@ -18,7 +18,6 @@ export async function submitRepo(
 
   const parsed = repoSubmitSchema.safeParse({
     github_url: formData.get("github_url"),
-    kind: formData.get("kind"),
     note: formData.get("note"),
   });
   if (!parsed.success) {
@@ -40,7 +39,7 @@ export async function submitRepo(
     stars: meta?.stars ?? null,
     language: meta?.language ?? null,
     owner_avatar_url: meta?.owner_avatar_url ?? null,
-    kind: parsed.data.kind,
+    kind: "build",
     note: parsed.data.note && parsed.data.note !== "" ? parsed.data.note : null,
     submitted_by: user.id,
     last_synced_at: meta ? new Date().toISOString() : null,

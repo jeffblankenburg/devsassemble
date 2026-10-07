@@ -17,6 +17,10 @@ import {
   tzLabel,
   isEventOver,
 } from "@/lib/events/format";
+import {
+  upcomingOccurrences,
+  latestPastOccurrence,
+} from "@/lib/events/recurrence";
 
 // Inline param type (not PageProps<...>) so this doesn't depend on Next's
 // generated route types, which can't be regenerated here. See docs/DECISIONS.md.
@@ -46,8 +50,15 @@ export default async function EventDetailPage({ params }: EventPageProps) {
     user ? getUserRsvp(event.id, user.id) : Promise.resolve(null),
   ]);
 
-  const isPast = isEventOver(event);
-  const isCancelled = event.status === "cancelled";
+  // For a recurring series, show the next occurrence (or the last one if the
+  // series has ended) rather than the stale base start.
+  const now = new Date();
+  const occurrence =
+    upcomingOccurrences(event, now, 1)[0] ??
+    latestPastOccurrence(event, now) ??
+    event;
+  const isPast = isEventOver(occurrence);
+  const isCancelled = occurrence.status === "cancelled";
   const loginHref = `/login?next=${encodeURIComponent(`/events/${event.slug}`)}`;
 
   return (
@@ -80,7 +91,8 @@ export default async function EventDetailPage({ params }: EventPageProps) {
 
         <article>
           <p className="font-mono text-sm uppercase tracking-widest text-muted">
-            {formatFullDate(event.starts_at)} · {formatTime(event.starts_at)}{" "}
+            {formatFullDate(occurrence.starts_at, event.timezone)} ·{" "}
+            {formatTime(occurrence.starts_at, event.timezone)}{" "}
             {tzLabel(event.timezone)}
             {event.host ? ` · ${event.host}` : ""}
           </p>

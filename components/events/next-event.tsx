@@ -10,7 +10,7 @@ const ACCENT: Record<EventRow["accent"], string> = {
 
 /** Compact "next up" teaser for the next upcoming event (hero). */
 export function NextEvent({ event }: { event: EventRow }) {
-  const d = formatDateParts(event.starts_at);
+  const d = formatDateParts(event.starts_at, event.timezone);
 
   return (
     <Link

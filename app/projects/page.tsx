@@ -4,7 +4,7 @@ import { PublicHeader } from "@/components/site/public-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RepoCard } from "@/components/repos/repo-card";
 import { ComicButton } from "@/components/brand/comic-button";
-import { listRepos, type RepoKind } from "@/lib/repos/queries";
+import { listRepos } from "@/lib/repos/queries";
 import { getSessionUser } from "@/lib/auth/dal";
 
 export const metadata: Metadata = {
@@ -14,15 +14,11 @@ export const metadata: Metadata = {
 };
 
 type ProjectsPageProps = {
-  searchParams: Promise<{ sort?: string; kind?: string }>;
+  searchParams: Promise<{ sort?: string }>;
 };
 
-function buildHref(sort: string, kind?: string) {
-  const p = new URLSearchParams();
-  if (sort === "top") p.set("sort", "top");
-  if (kind) p.set("kind", kind);
-  const qs = p.toString();
-  return qs ? `/projects?${qs}` : "/projects";
+function buildHref(sort: string) {
+  return sort === "top" ? "/projects?sort=top" : "/projects";
 }
 
 function chip(active: boolean) {
@@ -34,13 +30,11 @@ function chip(active: boolean) {
 export default async function ProjectsPage({
   searchParams,
 }: ProjectsPageProps) {
-  const { sort, kind } = await searchParams;
+  const { sort } = await searchParams;
   const sortMode = sort === "top" ? "top" : "new";
-  const kindFilter: RepoKind | undefined =
-    kind === "build" || kind === "recommendation" ? kind : undefined;
 
   const [repos, user] = await Promise.all([
-    listRepos({ sort: sortMode, kind: kindFilter }),
+    listRepos({ sort: sortMode }),
     getSessionUser(),
   ]);
 
@@ -64,33 +58,11 @@ export default async function ProjectsPage({
           to add one or react.
         </p>
 
-        <nav className="mt-6 flex flex-wrap items-center gap-2" aria-label="Filter">
-          <Link href={buildHref(sortMode)} className={chip(!kindFilter)}>
-            All
-          </Link>
-          <Link
-            href={buildHref(sortMode, "build")}
-            className={chip(kindFilter === "build")}
-          >
-            Builds
-          </Link>
-          <Link
-            href={buildHref(sortMode, "recommendation")}
-            className={chip(kindFilter === "recommendation")}
-          >
-            Picks
-          </Link>
-          <span className="mx-1 h-5 w-[2px] bg-brand-ink/15" aria-hidden />
-          <Link
-            href={buildHref("new", kindFilter)}
-            className={chip(sortMode === "new")}
-          >
+        <nav className="mt-6 flex flex-wrap items-center gap-2" aria-label="Sort">
+          <Link href={buildHref("new")} className={chip(sortMode === "new")}>
             Newest
           </Link>
-          <Link
-            href={buildHref("top", kindFilter)}
-            className={chip(sortMode === "top")}
-          >
+          <Link href={buildHref("top")} className={chip(sortMode === "top")}>
             Most loved
           </Link>
         </nav>

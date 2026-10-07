@@ -37,15 +37,6 @@ export function RepoCard({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`rounded-md border-[2px] border-brand-ink px-2 py-0.5 font-display text-xs uppercase ${
-                repo.kind === "build"
-                  ? "bg-brand-blue text-white"
-                  : "bg-brand-lime text-brand-ink"
-              }`}
-            >
-              {repo.kind === "build" ? "Build" : "Pick"}
-            </span>
             {repo.language && (
               <span className="font-mono text-xs text-muted">
                 {repo.language}

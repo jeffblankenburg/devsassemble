@@ -1,4 +1,5 @@
 import type { EventRow } from "./queries";
+import { toZonedStamp } from "./format";
 
 // RFC 5545 text escaping.
 function escapeText(value: string): string {
@@ -7,14 +8,6 @@ function escapeText(value: string): string {
     .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
     .replace(/\r?\n/g, "\\n");
-}
-
-// Stored timestamps are the event's wall-clock interpreted as UTC (see
-// docs/DECISIONS.md). For iCal we emit those digits with the event's TZID, so
-// "1:00 PM" in the event's timezone round-trips correctly in calendar clients.
-// "2026-10-08T13:00:00Z" -> "20261008T130000"
-function localStamp(iso: string): string {
-  return iso.slice(0, 19).replace(/[-:]/g, "");
 }
 
 // A real UTC instant -> "YYYYMMDDTHHMMSSZ" (for DTSTAMP).
@@ -56,13 +49,25 @@ export function buildVEvent(
       ? `;UNTIL=${event.recurrence_until.replace(/-/g, "")}T235959Z`
       : "";
 
+  // Skipped occurrences: exclude each cancelled date at the series' local time.
+  const timeOfDay = toZonedStamp(event.starts_at, tz).slice(9); // "HHMMSS"
+  const exdates =
+    rrule && event.recurrence_exceptions.length > 0
+      ? event.recurrence_exceptions.map(
+          (d) => `EXDATE;TZID=${tz}:${d.replace(/-/g, "")}T${timeOfDay}`,
+        )
+      : [];
+
   const lines = [
     "BEGIN:VEVENT",
     `UID:${event.id}@devsassemble.ai`,
     `DTSTAMP:${utcStamp(now)}`,
-    `DTSTART;TZID=${tz}:${localStamp(event.starts_at)}`,
-    ...(event.ends_at ? [`DTEND;TZID=${tz}:${localStamp(event.ends_at)}`] : []),
+    `DTSTART;TZID=${tz}:${toZonedStamp(event.starts_at, tz)}`,
+    ...(event.ends_at
+      ? [`DTEND;TZID=${tz}:${toZonedStamp(event.ends_at, tz)}`]
+      : []),
     ...(rrule ? [`RRULE:${rrule}${until}`] : []),
+    ...exdates,
     `SUMMARY:${escapeText(event.title)}`,
     `DESCRIPTION:${escapeText(description)}`,
     `URL:${escapeText(url)}`,

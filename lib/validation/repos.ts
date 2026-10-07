@@ -4,7 +4,6 @@ export const repoSubmitSchema = z.object({
   github_url: z
     .url({ error: "Paste a GitHub repository URL." })
     .max(300),
-  kind: z.enum(["build", "recommendation"]),
   note: z
     .string()
     .trim()
