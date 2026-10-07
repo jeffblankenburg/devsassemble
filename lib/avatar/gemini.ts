@@ -30,19 +30,16 @@ export function heroCooldown(heroGeneratedAt: string | null): {
   return { canGenerate: true, nextLabel: null };
 }
 
-const HERO_PROMPT =
+// ── Fixed core — identity, emblem, and safety. These NEVER vary. ────────────
+const HERO_CORE =
   "Restyle the PERSON in the FIRST image as a bold comic-book SUPERHERO. " +
   // Likeness is the #1 priority.
   "IDENTITY IS THE TOP PRIORITY: the result must be unmistakably the SAME individual. " +
   "Faithfully preserve their exact facial structure and proportions, bone structure, eye " +
   "shape and color, eyebrows, nose, mouth and smile, jawline, skin tone, and hairstyle, plus " +
   "any distinctive features (glasses, facial hair, freckles, piercings). Do NOT beautify, " +
-  "idealize, slim, age, change gender, or alter their face — change ONLY the art style and " +
-  "add a costume. Keep it a clear head-and-shoulders portrait so the face stays prominent and " +
-  "fills much of the frame. " +
-  // Style.
-  "Style: heavy black ink outlines, Ben-Day halftone shading, dramatic comic lighting, and " +
-  "vivid electric-blue, lime-green, and purple accents on a warm cream background. " +
+  "idealize, slim, age, change gender, or alter their face — change ONLY the art style, pose, " +
+  "costume, and background. The face must stay clearly recognizable and prominent in frame. " +
   // Emblem.
   "Give the costume a prominent CHEST EMBLEM that recreates the logo shown in the SECOND " +
   "image — the DevsAssemble 'DA' monogram — centered and clearly visible, in its bold comic " +
@@ -52,7 +49,60 @@ const HERO_PROMPT =
   "full coverage. Absolutely no sexualization, no revealing or skin-tight-for-effect clothing, " +
   "no exaggerated or emphasized body parts, no suggestive poses. Respectful, family-friendly, " +
   "and appropriate for all audiences regardless of gender. " +
-  "No extra text or watermark beyond the chest emblem.";
+  "No extra text or watermark beyond the chest emblem. ";
+
+// ── Variety pools — one picked at random per generation so no two match. ────
+const FRAMINGS = [
+  "Framing: a clear head-and-shoulders portrait with the face filling much of the frame.",
+  "Framing: a waist-up hero shot with the face still large and sharply in focus.",
+  "Framing: a dynamic three-quarter upper-body shot, face turned slightly but fully visible.",
+  "Framing: a low-angle 'hero looking up' upper-body shot that still keeps the face prominent.",
+];
+
+const POSES = [
+  "Pose: standing tall with arms crossed and a confident grin.",
+  "Pose: hands planted on hips in a classic triumphant hero stance.",
+  "Pose: one fist raised mid-air as if about to take flight.",
+  "Pose: a ready-for-action stance with fists clenched at the sides.",
+  "Pose: one arm extended forward palm-out, projecting energy.",
+  "Pose: arms relaxed, a calm and reassuring protector's stance.",
+];
+
+const CAPES = [
+  "Wardrobe: a long flowing cape billowing dramatically in the wind.",
+  "Wardrobe: a short shoulder cape clasped at the collar.",
+  "Wardrobe: a high-collared cape swept to one side.",
+  "Wardrobe: no cape — a sleek streamlined suit with armored shoulders.",
+  "Wardrobe: no cape — a utility-vest costume with a bold shoulder pauldron.",
+];
+
+const BACKGROUNDS = [
+  "Background: a dramatic city skyline at golden hour.",
+  "Background: a cosmic starfield with swirling nebula color.",
+  "Background: explosive comic action-lines radiating from the hero.",
+  "Background: a bold Ben-Day halftone dot field in brand colors.",
+  "Background: a warm cream backdrop with a single spotlight glow.",
+  "Background: a stormy sky split by lightning behind the hero.",
+];
+
+const ACCENTS = [
+  "Color accent: lead with vivid electric-blue highlights.",
+  "Color accent: lead with punchy lime-green highlights.",
+  "Color accent: lead with rich purple highlights.",
+  "Color accent: balance electric-blue, lime-green, and purple evenly.",
+];
+
+const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+/** Compose a fresh prompt: fixed identity/safety core + randomized variety. */
+function buildHeroPrompt(): string {
+  return (
+    HERO_CORE +
+    "Art style: heavy black ink outlines, Ben-Day halftone shading, and dramatic comic " +
+    "lighting. " +
+    `${pick(FRAMINGS)} ${pick(POSES)} ${pick(CAPES)} ${pick(BACKGROUNDS)} ${pick(ACCENTS)}`
+  );
+}
 
 export type ImageData = { base64: string; mimeType: string };
 
@@ -88,7 +138,7 @@ export async function generateHeroImage(
 
   const logo = await fetchBrandLogo();
   const requestParts: Array<Record<string, unknown>> = [
-    { text: HERO_PROMPT },
+    { text: buildHeroPrompt() },
     { inline_data: { mime_type: source.mimeType, data: source.base64 } },
   ];
   if (logo) {
