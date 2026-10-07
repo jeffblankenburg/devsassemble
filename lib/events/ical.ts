@@ -51,6 +51,10 @@ export function buildVEvent(
     .filter(Boolean)
     .join("\n\n");
   const rrule = RRULE[event.recurrence] ?? null;
+  const until =
+    rrule && event.recurrence_until
+      ? `;UNTIL=${event.recurrence_until.replace(/-/g, "")}T235959Z`
+      : "";
 
   const lines = [
     "BEGIN:VEVENT",
@@ -58,7 +62,7 @@ export function buildVEvent(
     `DTSTAMP:${utcStamp(now)}`,
     `DTSTART;TZID=${tz}:${localStamp(event.starts_at)}`,
     ...(event.ends_at ? [`DTEND;TZID=${tz}:${localStamp(event.ends_at)}`] : []),
-    ...(rrule ? [`RRULE:${rrule}`] : []),
+    ...(rrule ? [`RRULE:${rrule}${until}`] : []),
     `SUMMARY:${escapeText(event.title)}`,
     `DESCRIPTION:${escapeText(description)}`,
     `URL:${escapeText(url)}`,

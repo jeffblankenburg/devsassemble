@@ -34,6 +34,7 @@ function parseEventForm(formData: FormData) {
     accent: formData.get("accent"),
     status: formData.get("status"),
     recurrence: formData.get("recurrence") ?? "none",
+    recurrence_until: formData.get("recurrence_until"),
   });
 }
 
@@ -60,6 +61,11 @@ function eventRecordFrom(
       accent: data.accent,
       status: data.status,
       recurrence: data.recurrence,
+      // Only keep an end date for an actually-recurring event.
+      recurrence_until:
+        data.recurrence !== "none"
+          ? (nullIfEmpty(data.recurrence_until)?.slice(0, 10) ?? null)
+          : null,
     },
   };
 }

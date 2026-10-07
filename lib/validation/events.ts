@@ -48,6 +48,7 @@ export const eventSchema = z.object({
   accent: eventAccentEnum,
   status: eventStatusEnum,
   recurrence: z.enum(["none", "daily", "weekly", "biweekly", "monthly"]),
+  recurrence_until: z.string().optional().or(z.literal("")),
 });
 
 export type EventInput = z.infer<typeof eventSchema>;

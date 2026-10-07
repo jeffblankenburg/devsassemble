@@ -28,6 +28,7 @@ export type EventRow = {
   accent: EventAccent;
   status: EventStatus;
   recurrence: RecurrenceFreq;
+  recurrence_until: string | null;
   is_live: boolean;
   stream_embed_url: string | null;
   created_by: string | null;
@@ -36,7 +37,7 @@ export type EventRow = {
 };
 
 const EVENT_COLUMNS =
-  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, is_virtual, host, accent, status, recurrence, is_live, stream_embed_url, created_by, created_at, updated_at";
+  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, is_virtual, host, accent, status, recurrence, recurrence_until, is_live, stream_embed_url, created_by, created_at, updated_at";
 
 /** Published events, upcoming (ascending) or past (descending). RLS-safe. */
 export async function listPublishedEvents(opts?: {

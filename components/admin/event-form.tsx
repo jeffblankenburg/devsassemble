@@ -49,6 +49,9 @@ export function EventForm({
     {},
   );
   const [isVirtual, setIsVirtual] = useState(event?.is_virtual ?? true);
+  const [recurrence, setRecurrence] = useState<string>(
+    event?.recurrence ?? "none",
+  );
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -173,6 +176,7 @@ export function EventForm({
         <ChoiceChips
           name="recurrence"
           defaultValue={event?.recurrence ?? "none"}
+          onChange={(v) => setRecurrence(v)}
           options={[
             { value: "none", label: "Never" },
             { value: "weekly", label: "Weekly" },
@@ -182,6 +186,16 @@ export function EventForm({
           ]}
         />
       </Field>
+
+      {recurrence !== "none" && (
+        <Field label="Repeat until" hint="Leave blank to repeat indefinitely.">
+          <ComicDateTimePicker
+            name="recurrence_until"
+            dateOnly
+            defaultValue={event?.recurrence_until ?? undefined}
+          />
+        </Field>
+      )}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Accent">

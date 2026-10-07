@@ -37,9 +37,11 @@ type Parsed = {
 };
 
 function parseValue(value?: string): Parsed {
-  const m = value?.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  const m = value?.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
   if (m) {
-    const [y, mo, d, h, min] = m.slice(1).map(Number);
+    const [y, mo, d] = m.slice(1, 4).map(Number);
+    const h = m[4] ? Number(m[4]) : 0;
+    const min = m[5] ? Number(m[5]) : 0;
     return {
       date: new Date(y, mo - 1, d),
       hour12: ((h + 11) % 12) + 1,
@@ -61,9 +63,11 @@ const field =
 export function ComicDateTimePicker({
   name,
   defaultValue,
+  dateOnly,
 }: {
   name: string;
   defaultValue?: string;
+  dateOnly?: boolean;
 }) {
   const [init] = useState(() => parseValue(defaultValue));
   const [date, setDate] = useState<Date | undefined>(init.date);
@@ -75,7 +79,11 @@ export function ComicDateTimePicker({
   const [ampm, setAmpm] = useState<"AM" | "PM">(init.ampm);
 
   const h24 = ampm === "PM" ? (hour12 % 12) + 12 : hour12 % 12;
-  const value = date ? `${ymd(date)}T${pad(h24)}:${pad(minute)}` : "";
+  const value = date
+    ? dateOnly
+      ? ymd(date)
+      : `${ymd(date)}T${pad(h24)}:${pad(minute)}`
+    : "";
 
   return (
     <div className="rounded-[var(--radius-comic)] border-ink bg-white p-3 shadow-comic-sm">
@@ -113,51 +121,57 @@ export function ComicDateTimePicker({
           <span aria-hidden>📅</span>
         </button>
 
-        <span className="mx-1 font-display text-sm uppercase tracking-wide text-brand-ink/50">
-          at
-        </span>
+        {!dateOnly && (
+          <>
+            <span className="mx-1 font-display text-sm uppercase tracking-wide text-brand-ink/50">
+              at
+            </span>
 
-        <input
-          type="number"
-          min={1}
-          max={12}
-          value={hour12}
-          onChange={(e) =>
-            setHour12(Math.min(12, Math.max(1, Number(e.target.value) || 1)))
-          }
-          aria-label="Hour"
-          className={`${field} w-14 text-center font-mono`}
-        />
-        <span className="font-display text-brand-ink">:</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          maxLength={2}
-          value={minuteText}
-          onChange={(e) => {
-            const digits = e.target.value.replace(/\D/g, "").slice(0, 2);
-            setMinuteText(digits);
-            setMinute(Math.min(59, Number(digits) || 0));
-          }}
-          onBlur={() => setMinuteText(pad(Math.min(59, minute)))}
-          aria-label="Minute"
-          className={`${field} w-14 text-center font-mono`}
-        />
-        <div className="flex gap-1">
-          {(["AM", "PM"] as const).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setAmpm(p)}
-              aria-pressed={ampm === p}
-              className={`focus-comic rounded-md border-[2px] border-brand-ink px-3 py-1 font-display text-sm uppercase ${
-                ampm === p ? "bg-brand-blue text-white" : "bg-surface text-brand-ink"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
+            <input
+              type="number"
+              min={1}
+              max={12}
+              value={hour12}
+              onChange={(e) =>
+                setHour12(Math.min(12, Math.max(1, Number(e.target.value) || 1)))
+              }
+              aria-label="Hour"
+              className={`${field} w-14 text-center font-mono`}
+            />
+            <span className="font-display text-brand-ink">:</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={2}
+              value={minuteText}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, "").slice(0, 2);
+                setMinuteText(digits);
+                setMinute(Math.min(59, Number(digits) || 0));
+              }}
+              onBlur={() => setMinuteText(pad(Math.min(59, minute)))}
+              aria-label="Minute"
+              className={`${field} w-14 text-center font-mono`}
+            />
+            <div className="flex gap-1">
+              {(["AM", "PM"] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setAmpm(p)}
+                  aria-pressed={ampm === p}
+                  className={`focus-comic rounded-md border-[2px] border-brand-ink px-3 py-1 font-display text-sm uppercase ${
+                    ampm === p
+                      ? "bg-brand-blue text-white"
+                      : "bg-surface text-brand-ink"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {open && (
