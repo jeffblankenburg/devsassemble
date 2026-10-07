@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "@/components/app/profile-form";
+import { HeroAvatarGenerator } from "@/components/profile/hero-avatar-generator";
+import { heroAvatarEnabled } from "@/lib/avatar/gemini";
 
 export const metadata: Metadata = { title: "Profile settings" };
 
@@ -11,7 +13,7 @@ export default async function ProfileSettingsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, bio, website_url, x_url, linkedin_url")
+    .select("display_name, bio, website_url, x_url, linkedin_url, avatar_url")
     .eq("id", user.id)
     .single();
 
@@ -24,6 +26,12 @@ export default async function ProfileSettingsPage() {
         Signed in as <span className="font-mono">@{user.username}</span>
         {user.email ? ` · ${user.email}` : ""}
       </p>
+
+      {heroAvatarEnabled() && (
+        <div className="mt-8">
+          <HeroAvatarGenerator currentAvatar={profile?.avatar_url ?? null} />
+        </div>
+      )}
 
       <div className="mt-8 rounded-[var(--radius-comic)] border-ink bg-surface p-6 shadow-comic">
         <ProfileForm
