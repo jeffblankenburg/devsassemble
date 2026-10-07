@@ -4,6 +4,7 @@ import { Logo } from "@/components/brand/logo";
 import { ComicButton } from "@/components/brand/comic-button";
 import { MobileNav } from "@/components/site/mobile-nav";
 import { EventCard } from "@/components/events/event-card";
+import { NextEvent } from "@/components/events/next-event";
 import { HeroActivity } from "@/components/home/hero-activity";
 import { listPublishedEvents } from "@/lib/events/queries";
 import { getSessionUser } from "@/lib/auth/dal";
@@ -89,6 +90,7 @@ export default async function Home() {
     listPublishedEvents({ when: "upcoming", limit: 3 }),
     getSessionUser(),
   ]);
+  const nextEvent = upcoming[0];
 
   return (
     <div className="flex flex-1 flex-col">
@@ -164,6 +166,14 @@ export default async function Home() {
                   See upcoming events
                 </ComicButton>
               </div>
+              {nextEvent && (
+                <div
+                  className="pop-in mt-6 w-full max-w-md"
+                  style={{ animationDelay: "280ms" }}
+                >
+                  <NextEvent event={nextEvent} />
+                </div>
+              )}
               <p
                 className="pop-in mt-4 font-mono text-xs uppercase tracking-widest text-muted"
                 style={{ animationDelay: "320ms" }}
