@@ -44,7 +44,6 @@ export const metadata: Metadata = {
     description:
       "Show what you built. Share your strategies. Assemble with AI developers.",
   },
-  icons: { icon: "/logo-icon.png" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
