@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { ComicButton } from "@/components/brand/comic-button";
 import { MobileNav } from "@/components/site/mobile-nav";
+import { AppHeader } from "@/components/app/app-header";
 import { getSessionUser } from "@/lib/auth/dal";
 
 const NAV = [
@@ -14,6 +15,10 @@ const NAV = [
 /** Public site header for no-auth pages (events, profiles, …). */
 export async function PublicHeader() {
   const user = await getSessionUser();
+
+  // Signed-in visitors get the full authenticated nav everywhere, not the
+  // generic public one.
+  if (user) return <AppHeader user={user} />;
 
   return (
     <header className="sticky top-0 z-20 border-b-[3px] border-brand-ink bg-brand-cream/90 backdrop-blur supports-[backdrop-filter]:bg-brand-cream/75">

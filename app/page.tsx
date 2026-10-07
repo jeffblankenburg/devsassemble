@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { ComicButton } from "@/components/brand/comic-button";
 import { MobileNav } from "@/components/site/mobile-nav";
+import { AppHeader } from "@/components/app/app-header";
 import { EventCard } from "@/components/events/event-card";
 import { NextEvent } from "@/components/events/next-event";
 import { HeroActivity } from "@/components/home/hero-activity";
@@ -94,38 +95,39 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-20 border-b-[3px] border-brand-ink bg-brand-cream/90 backdrop-blur supports-[backdrop-filter]:bg-brand-cream/75">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Logo priority className="block" />
-          <div className="flex items-center gap-4">
-            <nav
-              aria-label="Primary"
-              className="hidden items-center gap-6 md:flex"
-            >
-              {NAV.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="focus-comic font-display text-lg uppercase tracking-wide text-brand-ink transition-colors hover:text-brand-blue"
-                >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-            <span className="hidden md:block">
-              <ComicButton href={user ? "/dashboard" : "/login"} variant="lime">
-                {user ? "Dashboard" : "Sign in"}
-              </ComicButton>
-            </span>
-            <MobileNav
-              items={NAV}
-              ctaHref={user ? "/dashboard" : "/login"}
-              ctaLabel={user ? "Dashboard" : "Sign in"}
-            />
+      {/* Signed-in visitors get the authenticated nav; logged-out visitors get
+          the marketing header with on-page anchors. */}
+      {user ? (
+        <AppHeader user={user} />
+      ) : (
+        <header className="sticky top-0 z-20 border-b-[3px] border-brand-ink bg-brand-cream/90 backdrop-blur supports-[backdrop-filter]:bg-brand-cream/75">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+            <Logo priority className="block" />
+            <div className="flex items-center gap-4">
+              <nav
+                aria-label="Primary"
+                className="hidden items-center gap-6 md:flex"
+              >
+                {NAV.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className="focus-comic font-display text-lg uppercase tracking-wide text-brand-ink transition-colors hover:text-brand-blue"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </nav>
+              <span className="hidden md:block">
+                <ComicButton href="/login" variant="lime">
+                  Sign in
+                </ComicButton>
+              </span>
+              <MobileNav items={NAV} ctaHref="/login" ctaLabel="Sign in" />
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <main id="main" className="flex flex-1 flex-col">
         {/* Hero — split: message/CTAs + live activity panel */}

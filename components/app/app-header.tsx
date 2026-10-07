@@ -14,7 +14,7 @@ const NAV = [
 /** Header for the authenticated app shell. */
 export function AppHeader({ user }: { user: SessionUser }) {
   return (
-    <header className="relative flex items-center justify-between border-b-[3px] border-brand-ink px-6 py-3">
+    <header className="sticky top-0 z-20 flex items-center justify-between border-b-[3px] border-brand-ink bg-brand-cream/90 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-brand-cream/75">
       <div className="flex items-center gap-4">
         <MobileNav items={NAV} ctaHref="/dashboard" ctaLabel="Dashboard" />
         <Logo priority />
