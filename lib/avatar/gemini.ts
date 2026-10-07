@@ -58,12 +58,14 @@ export async function fetchImageAsBase64(url: string): Promise<ImageData | null>
   }
 }
 
+export type GenerateResult = { image: ImageData | null; error?: string };
+
 /** Send the source image + hero prompt to Gemini; return the generated image. */
 export async function generateHeroImage(
   source: ImageData,
-): Promise<ImageData | null> {
+): Promise<GenerateResult> {
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return null;
+  if (!key) return { image: null, error: "GEMINI_API_KEY is not set." };
   const model = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
 
   try {
@@ -86,7 +88,13 @@ export async function generateHeroImage(
         ],
       }),
     });
-    if (!res.ok) return null;
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      const msg = `Gemini ${res.status} (model "${model}"): ${body.slice(0, 300)}`;
+      console.error("[hero-avatar]", msg);
+      return { image: null, error: msg };
+    }
 
     const data = (await res.json()) as {
       candidates?: {
@@ -108,11 +116,16 @@ export async function generateHeroImage(
           (inline as { mimeType?: string; mime_type?: string }).mimeType ??
           (inline as { mimeType?: string; mime_type?: string }).mime_type ??
           "image/png";
-        return { base64, mimeType };
+        return { image: { base64, mimeType } };
       }
     }
-    return null;
-  } catch {
-    return null;
+    return {
+      image: null,
+      error: "No image in the Gemini response (it may have been safety-blocked).",
+    };
+  } catch (e) {
+    const msg = `Request failed: ${String(e).slice(0, 200)}`;
+    console.error("[hero-avatar]", msg);
+    return { image: null, error: msg };
   }
 }

@@ -152,10 +152,13 @@ export async function generateHeroAvatar(
   const source = await fetchImageAsBase64(profile.base_avatar_url);
   if (!source) return { error: "Couldn't load your photo to transform." };
 
-  const generated = await generateHeroImage(source);
-  if (!generated) {
-    return { error: "Image generation failed — try again in a moment." };
+  const result = await generateHeroImage(source);
+  if (!result.image) {
+    return {
+      error: result.error ?? "Image generation failed — try again in a moment.",
+    };
   }
+  const generated = result.image;
 
   const bytes = Buffer.from(generated.base64, "base64");
   const ext = generated.mimeType.includes("png") ? "png" : "jpg";
