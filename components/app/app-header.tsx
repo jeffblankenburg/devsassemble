@@ -6,6 +6,7 @@ import type { SessionUser } from "@/lib/auth/dal";
 
 const NAV = [
   { href: "/projects", label: "Projects" },
+  { href: "/tools", label: "Tools" },
   { href: "/discussions", label: "Discussions" },
   { href: "/events", label: "Events" },
 ];

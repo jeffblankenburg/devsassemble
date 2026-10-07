@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
       // Supabase Storage (project-media, event covers). Host is env-driven at
       // deploy time; the wildcard covers any Supabase project subdomain.
       { protocol: "https", hostname: "*.supabase.co" },
+      // Favicons for recommended tools (returns a default icon for unknowns).
+      { protocol: "https", hostname: "icons.duckduckgo.com" },
     ],
   },
   async headers() {
