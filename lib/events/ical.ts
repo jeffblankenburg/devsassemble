@@ -80,14 +80,20 @@ export function buildCalendar(
   siteUrl: string,
   now: Date,
 ): string {
+  const calName = "DevsAssemble";
+  const calDesc = "Upcoming DevsAssemble livestreams and meetups";
   const header = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//DevsAssemble//Events//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "X-WR-CALNAME:DevsAssemble Events",
-    "X-WR-CALDESC:Upcoming DevsAssemble livestreams and meetups",
+    // RFC 7986 properties (preferred by modern clients)…
+    `NAME:${escapeText(calName)}`,
+    `DESCRIPTION:${escapeText(calDesc)}`,
+    // …plus the older X-WR-* equivalents for broad compatibility.
+    `X-WR-CALNAME:${escapeText(calName)}`,
+    `X-WR-CALDESC:${escapeText(calDesc)}`,
   ].join("\r\n");
 
   const body = events.map((e) => buildVEvent(e, siteUrl, now)).join("\r\n");
