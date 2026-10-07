@@ -10,6 +10,7 @@ import { toDatetimeLocalValue } from "@/lib/events/format";
 import { ComicButton } from "@/components/brand/comic-button";
 import { ChoiceChips, ColorSwatches } from "@/components/ui/choice-chips";
 import { ComicDateTimePicker } from "@/components/admin/comic-date-time-picker";
+import { TitleSlugFields } from "@/components/admin/title-slug-fields";
 import type { EventRow } from "@/lib/events/queries";
 
 const inputClass =
@@ -54,25 +55,11 @@ export function EventForm({
         <input type="hidden" name="id" value={event.id} />
       )}
 
-      <Field label="Title">
-        <input
-          name="title"
-          required
-          defaultValue={event?.title ?? ""}
-          placeholder="Ship-it Thursday: agents in production"
-          className={inputClass}
-        />
-      </Field>
-
-      <Field label="Slug" hint="Permanent URL: /events/your-slug — lowercase, hyphens.">
-        <input
-          name="slug"
-          required
-          defaultValue={event?.slug ?? ""}
-          placeholder="ship-it-thursday-agents"
-          className={inputClass}
-        />
-      </Field>
+      <TitleSlugFields
+        defaultTitle={event?.title ?? ""}
+        defaultSlug={event?.slug ?? ""}
+        excludeId={event?.id}
+      />
 
       <Field label="Summary" hint="Short blurb shown on cards (max 200 chars).">
         <input
