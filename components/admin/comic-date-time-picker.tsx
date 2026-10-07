@@ -71,6 +71,7 @@ export function ComicDateTimePicker({
   const [open, setOpen] = useState(false);
   const [hour12, setHour12] = useState(init.hour12);
   const [minute, setMinute] = useState(init.minute);
+  const [minuteText, setMinuteText] = useState(pad(init.minute));
   const [ampm, setAmpm] = useState<"AM" | "PM">(init.ampm);
 
   const h24 = ampm === "PM" ? (hour12 % 12) + 12 : hour12 % 12;
@@ -129,13 +130,16 @@ export function ComicDateTimePicker({
         />
         <span className="font-display text-brand-ink">:</span>
         <input
-          type="number"
-          min={0}
-          max={59}
-          value={minute}
-          onChange={(e) =>
-            setMinute(Math.min(59, Math.max(0, Number(e.target.value) || 0)))
-          }
+          type="text"
+          inputMode="numeric"
+          maxLength={2}
+          value={minuteText}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, "").slice(0, 2);
+            setMinuteText(digits);
+            setMinute(Math.min(59, Number(digits) || 0));
+          }}
+          onBlur={() => setMinuteText(pad(Math.min(59, minute)))}
           aria-label="Minute"
           className={`${field} w-14 text-center font-mono`}
         />
