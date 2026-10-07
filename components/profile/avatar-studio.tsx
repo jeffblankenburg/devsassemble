@@ -7,6 +7,7 @@ import {
   uploadBasePhoto,
   useGithubAvatar,
   setAvatarPreference,
+  setActiveHero,
   type AvatarState,
 } from "@/lib/avatar/actions";
 import { ComicButton } from "@/components/brand/comic-button";
@@ -45,6 +46,7 @@ export function AvatarStudio({
   canGenerate,
   nextAvailableLabel,
   heroEnabled,
+  heroGallery,
 }: {
   baseAvatar: string | null;
   heroAvatar: string | null;
@@ -53,6 +55,7 @@ export function AvatarStudio({
   canGenerate: boolean;
   nextAvailableLabel: string | null;
   heroEnabled: boolean;
+  heroGallery: string[];
 }) {
   const [uploadState, uploadAction, uploading] = useActionState<
     AvatarState,
@@ -135,7 +138,8 @@ export function AvatarStudio({
           </h3>
           <p className="mt-1 text-sm text-brand-ink/70">
             Turn your photo into a comic-book superhero — DevsAssemble style.
-            Once per week.
+            Once per week. For the best likeness, use a clear, front-facing,
+            well-lit photo.
           </p>
           <form action={genAction} className="mt-3 flex flex-col gap-3">
             <label className="flex items-start gap-2 text-sm text-brand-ink/80">
@@ -202,6 +206,52 @@ export function AvatarStudio({
               </form>
             ))}
           </div>
+        </div>
+      )}
+
+      {heroGallery.length > 0 && (
+        <div className="mt-6 border-t-2 border-brand-ink/10 pt-5">
+          <h3 className="font-display text-lg uppercase tracking-wide text-brand-ink">
+            Your heroes
+          </h3>
+          <p className="mt-1 text-sm text-brand-ink/70">
+            Every hero you&apos;ve made — set any as your avatar, or download it.
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-4">
+            {heroGallery.map((url) => (
+              <li key={url} className="flex flex-col items-center gap-2">
+                <Image
+                  src={url}
+                  alt="Past hero"
+                  width={80}
+                  height={80}
+                  className={`h-20 w-20 rounded-md border-ink object-cover shadow-comic-sm ${
+                    url === heroAvatar
+                      ? "ring-2 ring-brand-blue ring-offset-2"
+                      : ""
+                  }`}
+                />
+                <div className="flex gap-1">
+                  <form action={setActiveHero}>
+                    <input type="hidden" name="url" value={url} />
+                    <button
+                      type="submit"
+                      className="focus-comic rounded-md border-[2px] border-brand-ink bg-surface px-2 py-0.5 font-mono text-[10px] uppercase text-brand-ink hover:bg-brand-lime"
+                    >
+                      {url === heroAvatar ? "Active" : "Use"}
+                    </button>
+                  </form>
+                  <a
+                    href={`${url}?download=devsassemble-hero.png`}
+                    aria-label="Download"
+                    className="focus-comic rounded-md border-[2px] border-brand-ink bg-surface px-2 py-0.5 font-mono text-[10px] uppercase text-brand-ink hover:bg-brand-lime"
+                  >
+                    ⬇
+                  </a>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

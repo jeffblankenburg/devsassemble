@@ -112,6 +112,25 @@ export async function setAvatarPreference(formData: FormData): Promise<void> {
   await revalidateProfile(user.username);
 }
 
+/** Set a specific (past) hero image as the active avatar. */
+export async function setActiveHero(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const url = String(formData.get("url") ?? "");
+  // Only allow a hero from this member's own avatars folder.
+  if (!url || !url.includes(`/avatars/${user.id}/`)) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("profiles")
+    .update({
+      hero_avatar_url: url,
+      avatar_url: url,
+      avatar_preference: "hero",
+    })
+    .eq("id", user.id);
+  await revalidateProfile(user.username);
+}
+
 /** Generate a superhero version of the base photo (once per week). */
 export async function generateHeroAvatar(
   _prev: AvatarState,

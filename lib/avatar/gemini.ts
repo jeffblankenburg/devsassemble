@@ -31,19 +31,27 @@ export function heroCooldown(heroGeneratedAt: string | null): {
 }
 
 const HERO_PROMPT =
-  "Transform the FIRST image (a person) into a bold comic-book SUPERHERO portrait. " +
-  "Keep their face clearly recognizable — same features, hairstyle, and skin tone. " +
-  "Heavy black ink outlines, Ben-Day halftone shading, dramatic comic lighting, and " +
+  "Restyle the PERSON in the FIRST image as a bold comic-book SUPERHERO. " +
+  // Likeness is the #1 priority.
+  "IDENTITY IS THE TOP PRIORITY: the result must be unmistakably the SAME individual. " +
+  "Faithfully preserve their exact facial structure and proportions, bone structure, eye " +
+  "shape and color, eyebrows, nose, mouth and smile, jawline, skin tone, and hairstyle, plus " +
+  "any distinctive features (glasses, facial hair, freckles, piercings). Do NOT beautify, " +
+  "idealize, slim, age, change gender, or alter their face — change ONLY the art style and " +
+  "add a costume. Keep it a clear head-and-shoulders portrait so the face stays prominent and " +
+  "fills much of the frame. " +
+  // Style.
+  "Style: heavy black ink outlines, Ben-Day halftone shading, dramatic comic lighting, and " +
   "vivid electric-blue, lime-green, and purple accents on a warm cream background. " +
-  "Head-and-shoulders to chest, square composition, confident heroic pose. " +
+  // Emblem.
   "Give the costume a prominent CHEST EMBLEM that recreates the logo shown in the SECOND " +
-  "image — the DevsAssemble 'DA' monogram — centered and clearly visible on the chest, " +
-  "matching its bold comic style and electric-blue/lime-green/purple colors. " +
+  "image — the DevsAssemble 'DA' monogram — centered and clearly visible, in its bold comic " +
+  "colors. " +
   // Safety / appropriateness constraints — keep it tasteful for all genders.
-  "The character must be FULLY CLOTHED in a modest, practical, tasteful superhero costume " +
-  "with full coverage. Absolutely no sexualization, no revealing or skin-tight-for-effect " +
-  "clothing, no exaggerated or emphasized body parts, no suggestive poses. Respectful, " +
-  "family-friendly, and appropriate for all audiences regardless of gender. " +
+  "The character must be FULLY CLOTHED in a modest, practical, tasteful superhero costume with " +
+  "full coverage. Absolutely no sexualization, no revealing or skin-tight-for-effect clothing, " +
+  "no exaggerated or emphasized body parts, no suggestive poses. Respectful, family-friendly, " +
+  "and appropriate for all audiences regardless of gender. " +
   "No extra text or watermark beyond the chest emblem.";
 
 export type ImageData = { base64: string; mimeType: string };

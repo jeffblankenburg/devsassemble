@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "@/components/app/profile-form";
 import { AvatarStudio } from "@/components/profile/avatar-studio";
 import { heroAvatarEnabled, heroCooldown } from "@/lib/avatar/gemini";
+import { listHeroAvatars } from "@/lib/avatar/queries";
 
 export const metadata: Metadata = { title: "Profile settings" };
 
@@ -21,6 +22,7 @@ export default async function ProfileSettingsPage() {
 
   const isAdmin = user.role === "admin" || user.role === "moderator";
   const cooldown = heroCooldown(profile?.hero_generated_at ?? null);
+  const heroGallery = await listHeroAvatars(user.id);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
@@ -41,6 +43,7 @@ export default async function ProfileSettingsPage() {
           canGenerate={isAdmin || cooldown.canGenerate}
           nextAvailableLabel={isAdmin ? null : cooldown.nextLabel}
           heroEnabled={heroAvatarEnabled()}
+          heroGallery={heroGallery}
         />
       </div>
 
