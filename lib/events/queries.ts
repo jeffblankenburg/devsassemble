@@ -5,6 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 export type EventAccent = "blue" | "lime" | "purple";
 export type EventStatus = "draft" | "published" | "cancelled";
 export type RsvpStatus = "going" | "interested";
+export type RecurrenceFreq =
+  | "none"
+  | "daily"
+  | "weekly"
+  | "biweekly"
+  | "monthly";
 
 export type EventRow = {
   id: string;
@@ -16,10 +22,12 @@ export type EventRow = {
   ends_at: string | null;
   timezone: string;
   location: string | null;
+  url: string | null;
   is_virtual: boolean;
   host: string | null;
   accent: EventAccent;
   status: EventStatus;
+  recurrence: RecurrenceFreq;
   is_live: boolean;
   stream_embed_url: string | null;
   created_by: string | null;
@@ -28,7 +36,7 @@ export type EventRow = {
 };
 
 const EVENT_COLUMNS =
-  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, is_virtual, host, accent, status, is_live, stream_embed_url, created_by, created_at, updated_at";
+  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, is_virtual, host, accent, status, recurrence, is_live, stream_embed_url, created_by, created_at, updated_at";
 
 /** Published events, upcoming (ascending) or past (descending). RLS-safe. */
 export async function listPublishedEvents(opts?: {

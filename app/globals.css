@@ -237,3 +237,62 @@ body {
   height: auto;
   border-radius: var(--radius-comic);
 }
+
+/* react-day-picker comic skin (event date pickers). Scoped to .cal-comic. */
+.cal-comic {
+  --rdp-accent-color: var(--brand-blue);
+  --rdp-accent-background-color: var(--brand-blue);
+  --rdp-today-color: var(--brand-purple);
+  --rdp-day-width: 2.5rem;
+  --rdp-day-height: 2.5rem;
+  --rdp-weekday-opacity: 1;
+  color: var(--brand-ink);
+  display: flex;
+  justify-content: center;
+}
+.cal-comic .rdp-month_caption,
+.cal-comic .rdp-caption_label {
+  font-family: var(--font-display), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 1.15rem;
+  color: var(--brand-ink);
+}
+.cal-comic .rdp-weekday {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.cal-comic .rdp-day_button {
+  border-radius: 0.4rem;
+  font-size: 0.95rem;
+  border: 2px solid transparent;
+}
+.cal-comic .rdp-day_button:hover {
+  background: var(--brand-lime);
+  color: var(--brand-ink);
+}
+.cal-comic .rdp-selected .rdp-day_button {
+  background: var(--brand-blue);
+  color: #fff;
+  border: 2px solid var(--brand-ink);
+  font-weight: 700;
+}
+.cal-comic .rdp-today:not(.rdp-selected) .rdp-day_button {
+  color: var(--brand-purple);
+  font-weight: 700;
+}
+.cal-comic .rdp-chevron {
+  fill: var(--brand-ink);
+}
+.cal-comic .rdp-button_previous,
+.cal-comic .rdp-button_next {
+  border: 2px solid var(--brand-ink);
+  border-radius: 0.4rem;
+}
+.cal-comic .rdp-button_previous:hover,
+.cal-comic .rdp-button_next:hover {
+  background: var(--brand-lime);
+}

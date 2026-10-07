@@ -32,6 +32,14 @@ function fold(line: string): string {
   return parts.join("\r\n");
 }
 
+const RRULE: Record<string, string | null> = {
+  none: null,
+  daily: "FREQ=DAILY",
+  weekly: "FREQ=WEEKLY",
+  biweekly: "FREQ=WEEKLY;INTERVAL=2",
+  monthly: "FREQ=MONTHLY",
+};
+
 export function buildVEvent(
   event: EventRow,
   siteUrl: string,
@@ -42,6 +50,7 @@ export function buildVEvent(
   const description = [event.summary ?? event.description ?? "", url]
     .filter(Boolean)
     .join("\n\n");
+  const rrule = RRULE[event.recurrence] ?? null;
 
   const lines = [
     "BEGIN:VEVENT",
@@ -49,6 +58,7 @@ export function buildVEvent(
     `DTSTAMP:${utcStamp(now)}`,
     `DTSTART;TZID=${tz}:${localStamp(event.starts_at)}`,
     ...(event.ends_at ? [`DTEND;TZID=${tz}:${localStamp(event.ends_at)}`] : []),
+    ...(rrule ? [`RRULE:${rrule}`] : []),
     `SUMMARY:${escapeText(event.title)}`,
     `DESCRIPTION:${escapeText(description)}`,
     `URL:${escapeText(url)}`,

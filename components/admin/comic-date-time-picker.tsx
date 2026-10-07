@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 
@@ -29,14 +29,6 @@ function parseValue(value?: string): Parsed {
   }
   return { date: undefined, hour12: 12, minute: 0, ampm: "PM" };
 }
-
-// Comic accents for the calendar (CSS vars cascade into react-day-picker).
-const calVars = {
-  "--rdp-accent-color": "var(--brand-blue)",
-  "--rdp-accent-background-color": "var(--brand-blue)",
-  "--rdp-today-color": "var(--brand-purple)",
-  "--rdp-font-family": "var(--font-body), sans-serif",
-} as CSSProperties;
 
 const timeInput =
   "w-16 rounded-md border-[2px] border-brand-ink bg-white px-2 py-1 text-center font-mono text-brand-ink outline-none focus:shadow-comic-sm";
@@ -67,7 +59,7 @@ export function ComicDateTimePicker({
   return (
     <div className="rounded-[var(--radius-comic)] border-ink bg-white p-3 shadow-comic-sm">
       <input type="hidden" name={name} value={value} />
-      <div style={calVars}>
+      <div className="cal-comic">
         <DayPicker mode="single" selected={date} onSelect={setDate} />
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2 border-t-2 border-brand-ink/10 pt-3">

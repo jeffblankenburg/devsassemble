@@ -12,6 +12,7 @@ const TZ_LABELS: Record<string, string> = {
   "America/Denver": "MT",
   "America/Los_Angeles": "PT",
   "Europe/London": "GMT",
+  "Europe/Berlin": "CET",
   UTC: "UTC",
 };
 

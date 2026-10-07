@@ -92,6 +92,18 @@ export default async function EventDetailPage({ params }: EventPageProps) {
             <li className="rounded-md border-[2px] border-brand-ink bg-brand-cream px-3 py-1 font-mono text-brand-ink">
               {event.is_virtual ? "Virtual" : "In person"}
             </li>
+            {event.url && (
+              <li>
+                <a
+                  href={event.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="focus-comic rounded-md border-[2px] border-brand-ink bg-brand-blue px-3 py-1 font-mono text-white hover:-translate-y-0.5"
+                >
+                  Join →
+                </a>
+              </li>
+            )}
             {event.location && (
               <li className="rounded-md border-[2px] border-brand-ink bg-brand-cream px-3 py-1 font-mono text-brand-ink">
                 {event.location}

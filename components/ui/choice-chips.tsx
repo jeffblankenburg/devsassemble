@@ -10,11 +10,13 @@ export function ChoiceChips({
   options,
   defaultValue,
   required,
+  onChange,
 }: {
   name: string;
   options: Option[];
   defaultValue?: string;
   required?: boolean;
+  onChange?: (value: string) => void;
 }) {
   return (
     <div role="radiogroup" className="flex flex-wrap gap-2">
@@ -26,6 +28,7 @@ export function ChoiceChips({
             value={o.value}
             defaultChecked={o.value === defaultValue}
             required={required}
+            onChange={(e) => onChange?.(e.target.value)}
             className="peer sr-only"
           />
           <span className="inline-block rounded-md border-ink bg-surface px-4 py-2 font-display text-sm uppercase tracking-wide text-brand-ink shadow-comic-sm transition-transform peer-checked:-translate-y-0.5 peer-checked:bg-brand-blue peer-checked:text-white peer-checked:shadow-comic peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-purple">

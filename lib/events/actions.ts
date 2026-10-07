@@ -29,9 +29,11 @@ function parseEventForm(formData: FormData) {
     ends_at: formData.get("ends_at"),
     timezone: formData.get("timezone"),
     location: formData.get("location"),
+    url: formData.get("url"),
     host: formData.get("host"),
     accent: formData.get("accent"),
     status: formData.get("status"),
+    recurrence: formData.get("recurrence") ?? "none",
   });
 }
 
@@ -52,10 +54,12 @@ function eventRecordFrom(
       ends_at: data.ends_at ? toUtcIso(data.ends_at) : null,
       timezone: nullIfEmpty(data.timezone) ?? "America/New_York",
       location: nullIfEmpty(data.location),
+      url: nullIfEmpty(data.url),
       is_virtual: formData.get("is_virtual") === "true",
       host: nullIfEmpty(data.host),
       accent: data.accent,
       status: data.status,
+      recurrence: data.recurrence,
     },
   };
 }

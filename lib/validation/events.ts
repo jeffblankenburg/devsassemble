@@ -39,9 +39,15 @@ export const eventSchema = z.object({
   ends_at: z.string().optional().or(z.literal("")),
   timezone: z.string().trim().max(64).optional().or(z.literal("")),
   location: z.string().trim().max(200).optional().or(z.literal("")),
+  url: z
+    .url({ error: "Enter a valid URL (https://…)." })
+    .max(300)
+    .optional()
+    .or(z.literal("")),
   host: z.string().trim().max(80).optional().or(z.literal("")),
   accent: eventAccentEnum,
   status: eventStatusEnum,
+  recurrence: z.enum(["none", "daily", "weekly", "biweekly", "monthly"]),
 });
 
 export type EventInput = z.infer<typeof eventSchema>;

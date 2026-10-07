@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, type ReactNode } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import {
   createEvent,
   updateEvent,
@@ -48,6 +48,7 @@ export function EventForm({
     action,
     {},
   );
+  const [isVirtual, setIsVirtual] = useState(event?.is_virtual ?? true);
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -81,7 +82,7 @@ export function EventForm({
         />
       </Field>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5">
         <Field label="Starts" hint="Interpreted as the timezone below.">
           <ComicDateTimePicker
             name="starts_at"
@@ -98,41 +99,83 @@ export function EventForm({
         </Field>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Timezone">
-          <input
-            name="timezone"
-            defaultValue={event?.timezone ?? "America/New_York"}
-            placeholder="America/New_York"
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Host label">
-          <input
-            name="host"
-            defaultValue={event?.host ?? ""}
-            placeholder="Live build stream"
-            className={inputClass}
-          />
-        </Field>
-      </div>
-
-      <Field label="Location" hint="Leave blank for virtual-only.">
-        <input
-          name="location"
-          defaultValue={event?.location ?? ""}
-          placeholder="Virtual / Zoom / a city"
-          className={inputClass}
+      <Field label="Timezone">
+        <ChoiceChips
+          name="timezone"
+          defaultValue={event?.timezone ?? "America/New_York"}
+          options={[
+            { value: "America/New_York", label: "Eastern" },
+            { value: "America/Chicago", label: "Central" },
+            { value: "America/Denver", label: "Mountain" },
+            { value: "America/Los_Angeles", label: "Pacific" },
+            { value: "UTC", label: "UTC" },
+            { value: "Europe/London", label: "London" },
+            { value: "Europe/Berlin", label: "Berlin" },
+          ]}
         />
       </Field>
 
       <Field label="Format">
         <ChoiceChips
           name="is_virtual"
-          defaultValue={(event?.is_virtual ?? true) ? "true" : "false"}
+          defaultValue={isVirtual ? "true" : "false"}
+          onChange={(v) => setIsVirtual(v === "true")}
           options={[
             { value: "true", label: "Virtual" },
             { value: "false", label: "In person" },
+          ]}
+        />
+      </Field>
+
+      {isVirtual ? (
+        <Field
+          label="Event URL"
+          hint="Where attendees join — Zoom, Meet, a stream link, etc."
+        >
+          <input
+            name="url"
+            type="url"
+            defaultValue={event?.url ?? ""}
+            placeholder="https://…"
+            className={inputClass}
+          />
+        </Field>
+      ) : (
+        <Field label="Location" hint="Venue name and/or address.">
+          <input
+            name="location"
+            defaultValue={event?.location ?? ""}
+            placeholder="Venue, city"
+            className={inputClass}
+          />
+        </Field>
+      )}
+
+      <Field
+        label="Session type"
+        hint="A short descriptor shown on cards — like Live build stream or Community roundtable."
+      >
+        <input
+          name="host"
+          defaultValue={event?.host ?? ""}
+          placeholder="Live build stream"
+          className={inputClass}
+        />
+      </Field>
+
+      <Field
+        label="Repeats"
+        hint="Recurring events repeat automatically in subscribers' calendars."
+      >
+        <ChoiceChips
+          name="recurrence"
+          defaultValue={event?.recurrence ?? "none"}
+          options={[
+            { value: "none", label: "One-time" },
+            { value: "weekly", label: "Weekly" },
+            { value: "biweekly", label: "Every 2 weeks" },
+            { value: "monthly", label: "Monthly" },
+            { value: "daily", label: "Daily" },
           ]}
         />
       </Field>
