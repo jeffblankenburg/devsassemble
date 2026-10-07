@@ -12,6 +12,13 @@ export function RepoCard({
   isAuthed: boolean;
   loginHref: string;
 }) {
+  // GitHub Discussions live at <repo>/discussions. GitHub redirects to the
+  // repo home if Discussions isn't enabled, so linking is safe. Only build it
+  // for real github.com URLs.
+  const discussUrl = /^https?:\/\/(www\.)?github\.com\//i.test(repo.github_url)
+    ? `${repo.github_url.replace(/\/+$/, "")}/discussions`
+    : null;
+
   return (
     <article className="flex flex-col rounded-[var(--radius-comic)] border-ink bg-surface p-5 shadow-comic">
       <div className="flex items-start gap-3">
@@ -84,7 +91,7 @@ export function RepoCard({
         )}
       </div>
 
-      <div className="mt-3">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <ReactionBar
           repoId={repo.id}
           reactions={repo.reactions}
@@ -92,6 +99,16 @@ export function RepoCard({
           isAuthed={isAuthed}
           loginHref={loginHref}
         />
+        {discussUrl && (
+          <a
+            href={discussUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="focus-comic inline-flex shrink-0 items-center gap-1 rounded-md border-[2px] border-brand-ink bg-surface px-3 py-1 font-display text-sm uppercase tracking-wide text-brand-ink shadow-comic-sm transition-transform hover:-translate-y-0.5 hover:bg-brand-lime"
+          >
+            💬 Discuss ↗
+          </a>
+        )}
       </div>
     </article>
   );
