@@ -1,0 +1,1 @@
+Instead of "Shared a build" and "shared a tool" let's keep the emoji, and say "shared [repo name]", or "shared [tool name]" where the specifics are a highlighted color to make them stand out.
