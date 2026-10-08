@@ -1,0 +1,3 @@
+OK. So far, this is mostly terrible, but that's OK. I really haven't given you any content to use yet.
+
+Let's take a step back, get our MCP servers configured properly, restart if we need to, and go from there.
