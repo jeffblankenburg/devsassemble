@@ -1,0 +1,1 @@
+Apply the migration, dev and prod share the same project
