@@ -1,0 +1,1 @@
+So login is working in production, but now I can't log in with dev (localhost).  Is there a way to make the redirect conditional?
