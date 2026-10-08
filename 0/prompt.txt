@@ -1,0 +1,1 @@
+Also, the icon we're using in the footer.  That's actually 5-6 different icons.  Can you just use the one in the top left?  The same one we're using for the avatars?  And also use it as the favicon?
