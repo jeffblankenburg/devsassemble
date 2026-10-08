@@ -1,0 +1,1 @@
+Let's not make apostrophes or other non-word-dividing punctuation inherit a dash.  For example "AI Philosopher's Dinner" should be ai-philosophers-dinner
