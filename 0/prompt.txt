@@ -1,0 +1,4 @@
+I'd like to change the phrasing for those activities.
+
+"JEFFBLANKENBURG SHARED A BUILD." . [include their copy]
+"JEFFBLANKENBURG SHARED SOMETHING COOL." [include their copy]
