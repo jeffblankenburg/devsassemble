@@ -1,0 +1,18 @@
+This is a brand new project and concept.  I've provided header.png and icon.png to inform the design and potential header usage.
+
+So I know I want to create a virtual AI software developer’s group. A place for folks to show and tell what they’ve built, to show their strategies and tools, etc. I need a clever, memorable domain name that is ACTUALLY available. The website will focus on sharing all of this knowledge, host the livestream meetings, and help to build the community there.  This project is to construct the website for this community.
+
+The raw requirements:
+
+- Easy identity using Supabase auth with email through resend.
+- GitHub integration
+- Restream video streams
+- Schedule of events
+- Registration
+- Social media links and content
+- Administrative tools
+- Full Otel Observability
+- High security concerns
+- Vercel and Supabase hosting
+- Messaging between users
+- Social engagement tools like likes and sharing
