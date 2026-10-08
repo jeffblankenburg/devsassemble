@@ -1,0 +1,1 @@
+If we are going to use "LIVE NOW", we really need real-time user activity tracking.  I assume we're not doing that today.
