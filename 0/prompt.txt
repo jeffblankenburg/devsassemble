@@ -1,0 +1,1 @@
+Can we please use the new publishable and secret API keys from supbase rather than the legacy format?
