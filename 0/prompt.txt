@@ -1,0 +1,13 @@
+11:36:32.860 Running build in Washington, D.C., USA (East) – iad1
+11:36:32.861 Build machine configuration: 30 cores, 60 GB (Turbo Build Machine)
+11:36:32.985 Cloning github.com/jeffblankenburg/devsassemble (Branch: main, Commit: 0391380)
+11:36:32.986 Previous build caches not available.
+11:36:33.204 Cloning completed: 218.000ms
+11:36:33.641 Running "vercel build"
+11:36:33.648 Vercel CLI 62.1.0
+11:36:33.784 Your application is being built using `next build`. If you need to define a different build step, please create a `vercel-build` script in your `package.json` (e.g. `{ "scripts": { "vercel-build": "npm run prepare && next build" } }`).
+11:36:33.785 Installing dependencies...
+11:36:34.279 
+11:36:34.279 up to date in 383ms
+11:36:34.308 Warning: Could not identify Next.js version, ensure it is defined as a project dependency.
+11:36:34.315 Error: No Next.js version detected. Make sure your package.json has "next" in either "dependencies" or "devDependencies". Also check your Root Directory setting matches the directory of your package.json file.
