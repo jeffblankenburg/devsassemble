@@ -1,0 +1,1 @@
+If an event is repeating, I see that in the calendar feed on my Google Calendar. On the website, devsassemble.ai, I only see the current one.  When does the "next" one show up?
