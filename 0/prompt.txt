@@ -1,0 +1,1 @@
+Creating my first event.  I see a slug field.  If I am creating a repeating event, how can we handle that, so that the slug is the same each time?
