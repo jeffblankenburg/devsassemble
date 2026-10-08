@@ -1,0 +1,1 @@
+Got it.  Is there a way to provide a friendly name for the calendar?  It currently shows webcal:// as the name of the calendar.
