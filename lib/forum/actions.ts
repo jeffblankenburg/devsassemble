@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, requireUser } from "@/lib/auth/dal";
 import { topicSchema, replySchema, reportSchema } from "@/lib/validation/forum";
 import { slugify } from "@/lib/forum/slug";
+import { commitForumImages } from "@/lib/forum/images";
 
 export type ForumFormState = { error?: string; ok?: boolean };
 
@@ -54,6 +55,8 @@ export async function createTopic(
     return { error: "Could not generate a unique URL. Please try again." };
   }
 
+  await commitForumImages(supabase, parsed.data.body);
+
   revalidatePath("/discussions");
   redirect(`/discussions/${createdSlug}`);
 }
@@ -89,6 +92,8 @@ export async function createReply(
     .from("posts")
     .insert({ topic_id: topicId, body: parsed.data.body, author_id: user.id });
   if (error) return { error: error.message };
+
+  await commitForumImages(supabase, parsed.data.body);
 
   if (slug) revalidatePath(`/discussions/${slug}`);
   return { ok: true };

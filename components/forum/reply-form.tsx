@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { createReply, type ForumFormState } from "@/lib/forum/actions";
 import { ComicButton } from "@/components/brand/comic-button";
+import { MarkdownField } from "@/components/forum/markdown-toolbar";
 
 export function ReplyForm({
   topicId,
@@ -25,12 +26,11 @@ export function ReplyForm({
     <form ref={formRef} action={action} className="flex flex-col gap-3">
       <input type="hidden" name="topic_id" value={topicId} />
       <input type="hidden" name="slug" value={slug} />
-      <textarea
+      <MarkdownField
         name="body"
         rows={4}
         required
         placeholder="Write a reply… markdown supported."
-        className="rounded-[var(--radius-comic)] border-ink bg-white px-4 py-3 text-brand-ink outline-none focus:shadow-comic-sm"
       />
       <div className="flex items-center gap-4">
         <ComicButton variant="blue" type="submit" disabled={pending}>

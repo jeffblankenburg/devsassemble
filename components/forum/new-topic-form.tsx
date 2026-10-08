@@ -3,6 +3,7 @@
 import { useActionState, type ReactNode } from "react";
 import { createTopic, type ForumFormState } from "@/lib/forum/actions";
 import { ComicButton } from "@/components/brand/comic-button";
+import { MarkdownField } from "@/components/forum/markdown-toolbar";
 import { ChoiceChips } from "@/components/ui/choice-chips";
 import type { Category } from "@/lib/forum/queries";
 
@@ -55,13 +56,12 @@ export function NewTopicForm({ categories }: { categories: Category[] }) {
         />
       </Field>
 
-      <Field label="Body" hint="Markdown supported — **bold**, lists, `code`, links.">
-        <textarea
+      <Field label="Body" hint="Markdown supported — use the buttons or type it directly.">
+        <MarkdownField
           name="body"
           rows={10}
           required
           placeholder="Share your thoughts…"
-          className={inputClass}
         />
       </Field>
 

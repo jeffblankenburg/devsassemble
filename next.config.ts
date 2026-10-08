@@ -18,6 +18,14 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Server Actions cap request bodies at 1MB by default. Our image uploads
+    // (avatars + forum images) validate at 4MB, so raise the limit with room
+    // for multipart overhead. Stays under Vercel's 4.5MB function body cap.
+    serverActions: {
+      bodySizeLimit: "5mb",
+    },
+  },
   images: {
     remotePatterns: [
       // GitHub avatars for member profiles.
