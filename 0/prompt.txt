@@ -1,0 +1,3 @@
+They should have the option to use their GitHub avatar, OR upload a photo.  Then, they should be able to use whichever image they've chosen to create a superhero avatar.  Let's limit their superhero generation to once per week, and then the option to show their normal avatar or their superhero.
+
+I also want to make sure that we're not going to create oversexualized avatars of men or women.  Are we providing a base prompt for these?
