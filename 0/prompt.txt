@@ -1,0 +1,1 @@
+lose the cancel text.  buttons can toggle off.
