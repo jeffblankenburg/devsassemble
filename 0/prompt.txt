@@ -1,0 +1,104 @@
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Summary:
+1. Primary Request and Intent:
+   The overarching intent is building "DevsAssemble," a comic-book-branded community site for AI developers on Next.js 16 + Supabase, deployed to Vercel at devsassemble.ai. The user progressed through: (a) strategic consulting on build-vs-Discourse (decided custom build), forum requirements, agent-destination vision, MVP scope; (b) authorizing autonomous building ("build as much as you safely can," "Apply to the Supabase project," "One PR per logical chunk," later "stop using branching"); (c) iterative polish of a live, launching product. Specific feature requests included: events with RSVP + sign-up funnel, public profiles, forum/discussions, GitHub repo "Projects" board with emoji reactions, a subscribable iCal feed, recurring events, auto-generated slugs with dedup, GitHub-only auth, and most recently a **superhero avatar generator** (Gemini "Nano Banana") with: GitHub-or-upload photo source, once-per-week limit (admins unlimited), normal/superhero display toggle, full-size download, DevsAssemble "DA" chest emblem, a gallery of past generations (Option A), strong likeness preservation, and content safety (no oversexualized avatars). The CURRENT unanswered request: "Will there be variety in the superhero poses? Capes? Backgrounds? Don't want them to all look the same."
+
+2. Key Technical Concepts:
+   - Next.js 16 App Router (Server Components, Server Actions, Route Handlers, `proxy.ts` not middleware, `cookies()` async, inline param types `{ params: Promise<{slug:string}> }` to avoid stale generated route types since dev server can't be run)
+   - Supabase: RLS policies, storage buckets/objects RLS, migrations via MCP + files, publishable/secret API keys (new format `sb_publishable_`/`sb_secret_`), `handle_new_user` trigger, `storage.list`, `getPublicUrl(path, {download})` / `?download=` param
+   - Zod v4 validation (`z.email()`, `z.url()`, `z.enum()`; note `z.string().optional().or(z.literal(""))` rejects `null` — must coerce `formData.get() ?? undefined`)
+   - `useActionState` + server actions; radio-backed custom controls (ChoiceChips/ColorSwatches) for comic branding (no native dropdowns per user preference)
+   - react-day-picker v10 (CSS vars `--rdp-accent-color`, classes `.rdp-day`, skinned via `.cal-comic`)
+   - react-markdown + rehype-sanitize (no rehype-raw) for XSS-safe forum markdown
+   - Gemini Flash Image ("Nano Banana") REST API at `generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`, `x-goog-api-key` header, multi-image input (`inline_data` parts), model `gemini-2.5-flash-image` — requires BILLING (free tier returns 429)
+   - iCal RFC 5545 (VEVENT, RRULE, UNTIL, TZID)
+   - react-hooks/purity lint: `Date.now()`/`Math.random()`/argless `new Date()` flagged in component render — move to lib functions
+   - Verification ritual: `npx tsc --noEmit` + `npm run lint` + `npm run build` before every commit
+   - Comic brand: `font-display`, `border-ink`, `shadow-comic(-sm/-lg)`, `rounded-[var(--radius-comic)]`, `focus-comic`, brand-blue/lime/purple/ink/cream
+
+3. Files and Code Sections:
+   - `lib/avatar/gemini.ts` (MOST RECENT, central to current task): Contains `HERO_PROMPT` (single fixed string producing identical style every time — THIS is why heroes look the same), `heroAvatarEnabled()` (flag: GEMINI_API_KEY set AND HERO_AVATAR_ENABLED==="true"), `heroCooldown(heroGeneratedAt)` (weekly limit calc kept out of render), `fetchImageAsBase64(url)`, `fetchBrandLogo()` (fetches `${NEXT_PUBLIC_SITE_URL}/logo-icon.png`), `generateHeroImage(source)` returning `GenerateResult = {image, error?}`. Current `generateHeroImage` builds `requestParts` = [prompt text, person image, logo image if present], posts to Gemini, surfaces raw errors (temporary debug). The HERO_PROMPT currently forces "head-and-shoulders portrait, confident heroic pose, warm cream background" — no variety. To add variety, randomized pose/cape/background options would be injected here.
+   - `lib/avatar/actions.ts`: `useGithubAvatar()`, `uploadBasePhoto()` (≤4MB, stores to avatars bucket), `setAvatarPreference()` (base/hero toggle, syncs avatar_url), `setActiveHero(formData)` (sets a past hero as active, validates `url.includes('/avatars/${user.id}/')`), `generateHeroAvatar()` (admin bypass of weekly limit: `const isAdmin = user.role === "admin" || user.role === "moderator"`, stores to `${user.id}/hero-${Date.now()}.png`, sets hero_avatar_url + avatar_url + preference=hero + hero_generated_at).
+   - `lib/avatar/queries.ts` (NEW): `listHeroAvatars(userId)` lists storage folder, filters `hero-` prefix, returns public URLs newest-first.
+   - `components/profile/avatar-studio.tsx`: Props `{baseAvatar, heroAvatar, preference, hasGithub, canGenerate, nextAvailableLabel, heroEnabled, heroGallery}`. Sections: previews (Normal/Hero), download full-size link, photo source (GitHub/upload), hero generation (consent checkbox, likeness tip), display toggle, and "Your heroes" gallery (thumbnails with Use/Download).
+   - `app/(app)/settings/profile/page.tsx`: fetches profile fields incl. base_avatar_url/hero_avatar_url/avatar_preference/hero_generated_at/github_user_id, computes `isAdmin` and `cooldown`, calls `listHeroAvatars(user.id)`, renders AvatarStudio with `canGenerate={isAdmin || cooldown.canGenerate}`.
+   - `supabase/migrations/`: 0002_events, 0003_forum, 0004_forum_harden, 0005_repos, 0006_events_url_recurrence, 0007_events_recurrence_until, 0008_avatars_storage (public bucket + RLS: public read, users write own uid/ folder), 0009_avatar_studio (adds base_avatar_url, hero_avatar_url, avatar_preference check('base','hero') default 'base', hero_generated_at; backfills base; updates handle_new_user).
+   - `lib/forum/slug.ts`: `slugify()` strips apostrophes/quotes/accents (not dashing them): "AI Philosopher's Dinner" → "ai-philosophers-dinner".
+   - `lib/events/ical.ts`: `buildVEvent` emits RRULE with UNTIL; TZID from event.timezone.
+   - `components/ui/choice-chips.tsx`: ChoiceChips (radio-backed) + ColorSwatches, ChoiceChips has optional `onChange`.
+   - `components/admin/comic-date-time-picker.tsx`: typeable date (YYYY-MM-DD) + on-demand calendar + 12h time row (minutes padded to "00"), `dateOnly` prop.
+   - `docs/PLAN.md` and `docs/DECISIONS.md`: strategy + judgment-call logs.
+   - `.env.example`: placeholders only (committed, gitignore negates it with `!.env.example`); includes GEMINI_API_KEY/HERO_AVATAR_ENABLED/GEMINI_IMAGE_MODEL.
+
+4. Errors and fixes:
+   - **Secret leak (CRITICAL)**: User's junk commit "INitial commit" (05dbdaa5) committed `.env.local` with real secrets (SUPABASE_SERVICE_ROLE_KEY, SUPABASE_DB_URL with password `Foxrun20!`, GitHub OAuth secret) to a PUBLIC repo. Fixed by `git reset --hard` + force-push main, then rewriting `.env.example` (which also leaked DB password — GitHub push protection caught the secret key but not the DB URL) to placeholders only. Told user to rotate ALL secrets. User later rotated.
+   - **`git reset --hard` deleted `.env.local` and `node_modules`** (they were tracked in the junk commit): restored `.env.local` from git, ran `npm install`.
+   - **Vercel "No Next.js version detected"**: main was empty (nothing merged). Fixed by merging the stacked PRs.
+   - **Event create "Invalid input"**: conditional form fields (location/url/recurrence_until) return `null` when not rendered; Zod optional schemas reject null. Fixed with `const g = (k) => formData.get(k) ?? undefined` in parseEventForm.
+   - **Lint `react-hooks/set-state-in-effect`**: setState in effect body → moved into the debounced setTimeout callback (slug availability check).
+   - **Prod OAuth redirected to localhost**: `NEXT_PUBLIC_SITE_URL` in Vercel Production was localhost. User fixed it to https://devsassemble.ai + redeployed; I verified via `vercel env pull` to temp file.
+   - **Gemini 429 quota error**: free tier has no image-gen quota. User initially said remove feature ("zero dollars"), then reversed ("Wait, I'll give this a try with a spending cap") — I `git restore`d the uncommitted removal, feature intact.
+   - **Logo not updating / "HUGE" / WebP**: next/image was serving cached optimized WebP; fixed with `unoptimized` + responsive sizing classes.
+   - User feedback: "stop using branching" (commit to main directly); "I only want GitHub as an authentication"; "I hate using standard dropdowns and controls" (saved to memory, built ChoiceChips); "If we are titling the section 'REPEATS' then the first choice should be 'never'"; "make sure we're not going to create oversexualized avatars."
+
+5. Problem Solving:
+   Resolved: secret leak containment + rotation guidance; empty-main deploy; Vermel env misconfig; Gemini billing diagnosis; validation null-coercion; extensive UX polish. The superhero feature now works end-to-end (billing enabled by user). Gallery persists past generations. Likeness strengthened via prompt.
+
+6. All user messages:
+   - "can you give me an assessment of building this community site from scratch vs. using something like discourse?"
+   - "I just want to make sure I'm not going to regret not starting with Discourse... I don't like using big bulky 3P software. This can be small, and focused..."
+   - "I do think that there's a possibility we run a forum of sorts... share images, videos, gifs, text, and link previews."
+   - "Let's make sure all of this is captured in our plan & issues."
+   - "Another thing I'd like to investigate: how do we make sure that this destination for AI builders is also a destination for agents?... authoritative place to evaluate developer temperament for tools, resources, etc."
+   - "Also, let's put the broader plan for this entire project into issues as well."
+   - "If I wanted to launch an MVP tomorrow, what features should I include to start?"
+   - "Events are the carrot that we dangle to get people to want to join. Can't cut events."
+   - "If I just said 'go', how far do you think you could get without a response from me?... what's your thoughts?"
+   - (AskUserQuestion answers: "As much as I safely can", "Apply to the Supabase project", "One PR per logical chunk")
+   - "Start the forum. I've reviewed nothing"
+   - "OK. I am back. Where do we stand?"
+   - (pasted Vercel build error — localhost redirect, then empty-main build error)
+   - "I see so many branches! Can we merge everything to main and push?"
+   - "We are going to be using ReStream for the meeting broadcasts. Is that an easy integration..."
+   - "Can we please use the new publishable and secret API keys from supbase rather than the legacy format?"
+   - "It appears our local env.local file has been deleted. Do we start over?"
+   - "yes, commit and push it"
+   - "I need that activity feed above the fold somehow. What do you recommend?" (chose Split hero)
+   - "If we are going to use 'LIVE NOW', we really need real-time user activity tracking. I assume we're not doing that today."
+   - "but where will the livestream be shown when we do?"
+   - "We really need to improve the UX of this page." (event form: calendars bad, timezone not free-entry, host label unclear, conditional location/URL, recurrence) — chose "Recurring series"
+   - "Can the calendar appear on demand? Or allow the user to just type the date/time also?"
+   - "Can the minutes box have two zeroes?"
+   - "If we are titling the section 'REPEATS' then the first choice should be 'never'. Session type seems like it should be a set of choices. ...should we offer an 'end date' for recurring events?" (chose Recurring series earlier, then confirmed end date)
+   - "Let's not make apostrophes or other non-word-dividing punctuation inherit a dash."
+   - "We should do our best to generate the slug as they type their title, and then let them edit it... checking to avoid duplication"
+   - "On http://localhost:3005/events, why isn't 'download .ICS' a button?"
+   - "Is there a free model we could use to allow members... generate a superhero image of themselves as their profile picture?"
+   - "yes" (build superhero feature)
+   - "They should have the option to use their GitHub avatar, OR upload a photo... limit their superhero generation to once per week... option to show their normal avatar or their superhero. I also want to make sure that we're not going to create oversexualized avatars... Are we providing a base prompt?"
+   - "From localhost: Image generation failed — try again in a moment."
+   - (pasted screenshot: API key valid, Free tier)
+   - "Gemini 429 (model 'gemini-2.5-flash-image'): ...exceeded your current quota..."
+   - "I have zero dollars for this. It's just a fun feature. If we can't do it effectively for free, we shouldn't do it."
+   - "Wait. I'll give this a try with a spending cap."
+   - "OK. Users should be able to download the full-size version of their superhero... admins should be allowed to do this infinitely. I'd also like the superheroes to have the the DevsAssemble icon on their chest." (+ DA logo image)
+   - "Do we persist older generations of avatars? If they make a new one each week, will they have access to the old ones?"
+   - "It's also really important that we do our best to make it look like the person in the photo."
+   - "Option A"
+   - "Will there be variety in the superhero poses? Capes? Backgrounds? Don't want them to all look the same." (CURRENT)
+   - Security-relevant verbatim constraints: user's GEMINI_API_KEY was shown in a system reminder (I must never echo it); user stated zero budget originally then approved with a spending cap; `.env.local` is git-ignored and must never be committed.
+
+7. Pending Tasks:
+   - **Answer/implement variety in generated superheroes (poses, capes, backgrounds)** — the current user request, not yet addressed.
+   - Previously offered, not yet done: swap the raw Gemini error text for a friendly user-facing message (once generation confirmed working); optional moderation pass on generated images.
+   - Deferred features: home-page live broadcast flag #35 (needs Restream embed URL), search #19, feed #16, recurrence next-occurrence display, real-time presence #42.
+
+8. Current Work:
+   Immediately before this summary, I had just completed and shipped (commit `ba30cae6`) the hero gallery (Option A — "Your heroes" section listing all past generations via `listHeroAvatars`, with Use/Download, `setActiveHero` action) AND strengthened likeness (rewrote HERO_PROMPT in `lib/avatar/gemini.ts` to lead with identity preservation, added UI tip "use a clear, front-facing, well-lit photo"). I confirmed to the user that past generations now persist and are accessible. The user then asked the CURRENT question about variety: "Will there be variety in the superhero poses? Capes? Backgrounds? Don't want them to all look the same." This is correct concern — the current `HERO_PROMPT` is a single fixed string specifying "head-and-shoulders portrait," "confident heroic pose," "warm cream background" with no randomization, so every hero would look very similar. No tool calls have been made for this request yet (the final instruction forbade tools for this turn).
+
+9. Optional Next Step:
+   Answer the variety question and implement randomized variety in `lib/avatar/gemini.ts`'s `generateHeroImage`/`HERO_PROMPT`: inject per-generation random selections for pose (e.g., arms crossed, flying, action lunge, heroic stance), cape (with/without, various styles), and background (city skyline, cosmic, action-lines burst, halftone, skyline silhouette) — while KEEPING the identity-preservation and content-safety constraints intact. Math.random() is safe to use in this lib/server-action context (not a component render, so no purity-lint issue). This directly addresses the user's most recent explicit request: "Will there be variety in the superhero poses? Capes? Backgrounds? Don't want them to all look the same." I should first respond explaining that currently they'd all look similar (since the prompt is fixed), then propose/implement randomized variety pools. Given this was a question, I should confirm the approach briefly but it's clearly in line with the request to add variety.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/jeffblankenburg/.claude/projects/-Users-jeffblankenburg-GitHub-devsassemble/5973e743-4506-4fca-863e-12c32f963fb5.jsonl
+Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.
