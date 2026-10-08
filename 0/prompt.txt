@@ -1,0 +1,4 @@
+If we are titling the section "REPEATS" then the first choice should be "never"
+Session type seems like it should be a set of choices.
+
+Also, and I'm looking for an opinion here, should we offer an "end date" for recurring events?
