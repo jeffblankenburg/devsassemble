@@ -1,0 +1,3 @@
+It redirected here: http://localhost:3005/auth/callback?code=390a9e3a-f4a6-4adf-a0ab-a8d49b6e00af&next=%2Fdashboard
+
+But I suspect that is because we haven't pushed to prod.
