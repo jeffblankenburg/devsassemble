@@ -1,0 +1,1 @@
+I want users to be able to pick a time and time zone, and have that reflected appropriately.  We should be storing all of the dates/times in UTC.
