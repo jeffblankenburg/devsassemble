@@ -1,0 +1,1 @@
+We also need to remove "picks" from the projects page, since we introduced "tools."
