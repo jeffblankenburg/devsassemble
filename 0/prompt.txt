@@ -1,0 +1,1 @@
+Can the projects on https://www.devsassemble.ai/projects have a "discuss" button that leads to the GitHub discussion for that repo (if it's a github repo?)
