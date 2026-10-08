@@ -1,0 +1,1 @@
+I have now updated the public/logo-header.png, and it is still showing the old version on the dev server.
