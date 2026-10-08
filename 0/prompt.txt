@@ -1,0 +1,1 @@
+In the hero section, I think a "see upcoming events" button makes sense, but I also think a "next upcoming event" detail could be useful.
