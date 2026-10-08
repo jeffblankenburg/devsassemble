@@ -1,0 +1,1 @@
+Do we persist older generations of avatars?  If they make a new one each week, will they have access to the old ones?
