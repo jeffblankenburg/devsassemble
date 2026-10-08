@@ -1,0 +1,3 @@
+OK. Users should be able to download the full-size version of their superhero to use other places.  Also, admins should be allowed to do this infinitely.
+
+I'd also like the superheroes to have the the DevsAssemble icon on their chest. [Image #7]
