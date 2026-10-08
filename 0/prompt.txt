@@ -1,0 +1,1 @@
+I'd like a subscribable ical feed for the events, so people can easily add them to their calendars.
