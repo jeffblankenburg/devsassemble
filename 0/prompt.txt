@@ -1,0 +1,5 @@
+We really need to improve the UX of this page. [Image #4] 
+
+The calendars look bad at all widths.  Timezone can't be a free entry field. It's unclear what "Host Label" is.  If location is only relevant for in-person, then let's only show it after they select "in-person".  For virtual, it probably makes sense to have a URL field instead.
+
+Please also add the fields for recurrence.
