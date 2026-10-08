@@ -1,0 +1,15 @@
+<bash-stdout>Agent: Claude Code (use --agent to change)
+
+  ✓ Installed hooks
+  ✓ Configured project
+    .entire/settings.json
+Note: Vercel detected. Run `entire configure` interactively to disable deployments for `entire/**` branches.
+2026/10/07 14:26:07 INFO session import offer skipped: no explicit opt-in eligible=1 yes=false
+Found importable history for 1 agent. Run 'entire import &lt;agent&gt;' to import it.
+
+Ready.
+
+Update available! 0.11.2 -&gt; 0.11.4
+Release notes: https://github.com/entireio/cli/releases/tag/v0.11.4
+To update, run:
+  brew upgrade --yes entire</bash-stdout><bash-stderr></bash-stderr>
