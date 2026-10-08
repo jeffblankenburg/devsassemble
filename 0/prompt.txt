@@ -1,0 +1,1 @@
+Where can I update the header image?  I've updated it in brand/, but the change isn't being reflected.
