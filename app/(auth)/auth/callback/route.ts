@@ -1,6 +1,7 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/redirects";
+import { sendWelcome } from "@/lib/email/send";
 
 /**
  * OAuth callback (GitHub). Exchanges the `code` for a session, then redirects
@@ -23,6 +24,25 @@ export async function GET(request: NextRequest) {
     const { error: exchangeError } =
       await supabase.auth.exchangeCodeForSession(code);
     if (!exchangeError) {
+      // Welcome the member on their first successful sign-in (exactly once).
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("welcomed_at")
+          .eq("id", user.id)
+          .maybeSingle<{ welcomed_at: string | null }>();
+        if (profile && !profile.welcomed_at) {
+          await supabase
+            .from("profiles")
+            .update({ welcomed_at: new Date().toISOString() })
+            .eq("id", user.id);
+          after(() => sendWelcome(user.id));
+        }
+      }
+
       // Respect proxied host in production (Vercel).
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocal = process.env.NODE_ENV === "development";

@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -7,6 +8,17 @@ import { requireAdmin, requireUser } from "@/lib/auth/dal";
 import { topicSchema, replySchema, reportSchema } from "@/lib/validation/forum";
 import { slugify } from "@/lib/forum/slug";
 import { commitForumImages } from "@/lib/forum/images";
+import {
+  notifyForumReply,
+  notifyNewReport,
+  notifyReportResolved,
+} from "@/lib/email/send";
+
+/** Plain-text, single-line preview of a markdown body for email. */
+function excerpt(body: string, max = 180): string {
+  const flat = body.replace(/\s+/g, " ").trim();
+  return flat.length > max ? `${flat.slice(0, max)}…` : flat;
+}
 
 export type ForumFormState = { error?: string; ok?: boolean };
 
@@ -81,10 +93,15 @@ export async function createReply(
 
   const { data: topic } = await supabase
     .from("topics")
-    .select("is_locked")
+    .select("is_locked, author_id, title, slug")
     .eq("id", topicId)
-    .maybeSingle();
-  if ((topic as { is_locked: boolean } | null)?.is_locked) {
+    .maybeSingle<{
+      is_locked: boolean;
+      author_id: string | null;
+      title: string;
+      slug: string;
+    }>();
+  if (topic?.is_locked) {
     return { error: "This topic is locked." };
   }
 
@@ -94,6 +111,21 @@ export async function createReply(
   if (error) return { error: error.message };
 
   await commitForumImages(supabase, parsed.data.body);
+
+  // Notify the topic author (not the replier themselves).
+  if (topic && topic.author_id && topic.author_id !== user.id) {
+    const replierName = user.displayName ?? user.username ?? "Someone";
+    const body = parsed.data.body;
+    after(() =>
+      notifyForumReply({
+        topicAuthorId: topic.author_id!,
+        topicTitle: topic.title,
+        slug: topic.slug,
+        replierName,
+        excerpt: excerpt(body),
+      }),
+    );
+  }
 
   if (slug) revalidatePath(`/discussions/${slug}`);
   return { ok: true };
@@ -178,13 +210,22 @@ export async function reportContent(
   if (!parsed.success) return { error: "Could not file that report." };
 
   const supabase = await createClient();
+  const reason =
+    parsed.data.reason && parsed.data.reason !== "" ? parsed.data.reason : null;
   const { error } = await supabase.from("reports").insert({
     reporter_id: user.id,
     target_type: parsed.data.target_type,
     target_id: parsed.data.target_id,
-    reason: parsed.data.reason && parsed.data.reason !== "" ? parsed.data.reason : null,
+    reason,
   });
   if (error) return { error: error.message };
+
+  after(() =>
+    notifyNewReport({
+      targetType: parsed.data.target_type,
+      reason: reason ?? "",
+    }),
+  );
 
   return { ok: true };
 }
@@ -197,6 +238,14 @@ export async function resolveReport(formData: FormData): Promise<void> {
   if (!id) return;
 
   const supabase = await createClient();
+
+  // Capture the reporter before updating so we can close the loop by email.
+  const { data: report } = await supabase
+    .from("reports")
+    .select("reporter_id, target_type")
+    .eq("id", id)
+    .maybeSingle<{ reporter_id: string | null; target_type: string }>();
+
   const { error } = await supabase
     .from("reports")
     .update({
@@ -206,6 +255,14 @@ export async function resolveReport(formData: FormData): Promise<void> {
     })
     .eq("id", id);
   if (error) throw error;
+
+  if (report?.reporter_id) {
+    const reporterId = report.reporter_id;
+    const contextLabel = `a ${report.target_type}`;
+    after(() =>
+      notifyReportResolved({ reporterId, status, contextLabel }),
+    );
+  }
 
   revalidatePath("/admin/reports");
 }

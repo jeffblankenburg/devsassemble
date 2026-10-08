@@ -1,11 +1,24 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, requireUser } from "@/lib/auth/dal";
 import { eventSchema, rsvpStatusEnum } from "@/lib/validation/events";
-import { DEFAULT_TIMEZONE, zonedWallClockToUtcIso } from "@/lib/events/format";
+import {
+  DEFAULT_TIMEZONE,
+  zonedWallClockToUtcIso,
+  formatFullDate,
+  formatTime,
+  tzLabel,
+} from "@/lib/events/format";
+import { notifyEventChange } from "@/lib/email/send";
+
+/** Human "when" line for emails, e.g. "Fri, Oct 10 at 6:00 PM (ET)". */
+function whenLabel(iso: string, tz: string): string {
+  return `${formatFullDate(iso, tz)} at ${formatTime(iso, tz)} (${tzLabel(tz)})`;
+}
 
 export type EventFormState = { error?: string };
 
@@ -119,6 +132,14 @@ export async function updateEvent(
   if ("error" in built) return { error: built.error };
 
   const supabase = await createClient();
+
+  // Snapshot the prior state so we can tell attendees what changed.
+  const { data: prior } = await supabase
+    .from("events")
+    .select("status, starts_at")
+    .eq("id", id)
+    .maybeSingle<{ status: string; starts_at: string }>();
+
   const { error } = await supabase
     .from("events")
     .update(built.record)
@@ -127,6 +148,33 @@ export async function updateEvent(
   if (error) {
     if (error.code === "23505") return { error: "That slug is already taken." };
     return { error: error.message };
+  }
+
+  // Notify RSVPs on a material change to a live event: cancellation, or a
+  // start-time move while published. Draft edits reach no one (no RSVPs).
+  if (prior) {
+    const rec = built.record;
+    const base = {
+      eventId: id,
+      slug: rec.slug,
+      eventTitle: rec.title,
+      whenLabel: whenLabel(rec.starts_at, rec.timezone),
+    };
+    if (prior.status === "published" && rec.status === "cancelled") {
+      after(() => notifyEventChange({ ...base, kind: "cancelled" }));
+    } else if (
+      prior.status === "published" &&
+      rec.status === "published" &&
+      prior.starts_at !== rec.starts_at
+    ) {
+      after(() =>
+        notifyEventChange({
+          ...base,
+          kind: "changed",
+          changeSummary: "the start time changed",
+        }),
+      );
+    }
   }
 
   revalidatePath("/events");
