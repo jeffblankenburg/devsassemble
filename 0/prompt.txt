@@ -1,0 +1,1 @@
+When a user is logged in, they should always see the authenticated nav, not the generic home page (unauth) nav.
