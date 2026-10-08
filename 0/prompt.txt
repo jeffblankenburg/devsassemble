@@ -1,0 +1,3 @@
+When a user tried to log in to the production site at devsassemble.ai, they were redirected to http://localhost:3005/auth/callback?code=efc0210b-af35-423c-acd1-da89480a2deb&next=%2Fdashboard
+
+Where do I fix this?
