@@ -1,0 +1,1 @@
+we reconfigured our mcp for supabase.  does it work now?
