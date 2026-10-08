@@ -1,0 +1,6 @@
+We need to clean up the profile page.  https://www.devsassemble.ai/settings/profile
+
+1. Let's lose the Download Full Size Hero button entirely.
+2. Let's make clicking the individual images (normal, hero) the way to select what is shown, instead of separate buttons.
+3. The superhero gallery should appear above the superhero generation if they have already created an image.
+4. Tapping the individual superhero images should show them full screen.
