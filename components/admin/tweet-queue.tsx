@@ -53,15 +53,30 @@ function TweetCard({ draft }: { draft: TweetRow }) {
         <p className="font-display uppercase tracking-wide text-brand-ink">
           Posted ✓
         </p>
-        {state.url && (
-          <a
-            href={state.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="focus-comic text-sm text-brand-blue underline"
-          >
-            {state.url}
-          </a>
+        <div className="mt-1 flex flex-wrap gap-3 text-sm">
+          {state.url && (
+            <a
+              href={state.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="focus-comic text-brand-blue underline"
+            >
+              View on X
+            </a>
+          )}
+          {state.blueskyUrl && (
+            <a
+              href={state.blueskyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="focus-comic text-brand-blue underline"
+            >
+              View on Bluesky
+            </a>
+          )}
+        </div>
+        {state.warning && (
+          <p className="mt-1 text-sm text-brand-purple">{state.warning}</p>
         )}
       </li>
     );

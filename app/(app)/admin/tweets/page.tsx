@@ -18,16 +18,25 @@ export default async function AdminTweetsPage() {
         Tweets
       </h1>
       <p className="mt-2 text-brand-ink/70">
-        Review daily drafts for{" "}
+        Review daily drafts, edit, and cross-post to{" "}
         <a
           href="https://x.com/devsassembleAI"
           target="_blank"
           rel="noopener noreferrer"
           className="focus-comic text-brand-blue underline"
         >
-          @devsassembleAI
+          X
+        </a>{" "}
+        and{" "}
+        <a
+          href="https://bsky.app/profile/devsassemble.ai"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="focus-comic text-brand-blue underline"
+        >
+          Bluesky
         </a>
-        , edit, and post. Nothing goes out without your approval.
+        . Nothing goes out without your approval.
       </p>
 
       <div className="mt-6">
@@ -51,16 +60,28 @@ export default async function AdminTweetsPage() {
                 className="rounded-[var(--radius-comic)] border-[2px] border-brand-ink/30 bg-surface p-3 text-sm"
               >
                 <p className="text-brand-ink/85">{t.body}</p>
-                {t.posted_url && (
-                  <a
-                    href={t.posted_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="focus-comic font-mono text-xs text-brand-blue underline"
-                  >
-                    View on X
-                  </a>
-                )}
+                <div className="mt-1 flex flex-wrap gap-3">
+                  {t.posted_url && (
+                    <a
+                      href={t.posted_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="focus-comic font-mono text-xs text-brand-blue underline"
+                    >
+                      View on X
+                    </a>
+                  )}
+                  {t.bluesky_url && (
+                    <a
+                      href={t.bluesky_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="focus-comic font-mono text-xs text-brand-blue underline"
+                    >
+                      View on Bluesky
+                    </a>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
