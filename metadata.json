@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4GTN9PE4807HC3RR9A2QRHY",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 48,
+  "files_touched": [
+    "app/(app)/admin/tweets/page.tsx",
+    "app/about/page.tsx",
+    "app/api/cron/tweet-draft/route.ts",
+    "app/api/cron/tweet-publish/route.ts",
+    "app/api/ingest/news/route.ts",
+    "components/admin/tweet-queue.tsx",
+    "components/events/next-event.tsx",
+    "components/site/site-footer.tsx",
+    "lib/ai/tweets.ts",
+    "lib/events/format.ts",
+    "lib/tweets/actions.ts",
+    "lib/tweets/pipeline.ts",
+    "lib/tweets/publish.ts",
+    "lib/tweets/queries.ts",
+    "lib/tweets/sources.ts",
+    "supabase/migrations/20261002000023_tweets_scheduled.sql",
+    "supabase/migrations/20261002000024_news_ingest.sql",
+    "vercel.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 35479,
+    "cache_creation_tokens": 2904681,
+    "cache_read_tokens": 255771421,
+    "output_tokens": 575057,
+    "api_call_count": 483
+  }
+}
