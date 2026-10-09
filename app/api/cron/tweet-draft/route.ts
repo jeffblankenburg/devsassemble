@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     }
   }
 
-  const result = await draftTweets();
+  const result = await draftTweets({ includeNews: true });
   if (!result.ok) {
     return Response.json({ error: result.error }, { status: 500 });
   }

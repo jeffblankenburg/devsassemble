@@ -129,6 +129,23 @@ export function toZonedStamp(iso: string, timeZone: string): string {
   return `${p.year}${p.month}${p.day}T${p.hour}${p.minute}${p.second}`;
 }
 
+/**
+ * A short "City, ST" label from a free-text address (US-style), e.g.
+ * "Firefly Winery, 5435 Franklin St, Hilliard, OH 43026" → "Hilliard, OH".
+ * Falls back to the last couple of segments when it can't find a state.
+ */
+export function shortLocation(location: string): string {
+  const parts = location
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  for (let i = parts.length - 1; i >= 1; i--) {
+    const m = parts[i].match(/^([A-Za-z]{2})(?:\s+\d{5}(?:-\d{4})?)?$/);
+    if (m) return `${parts[i - 1]}, ${m[1].toUpperCase()}`;
+  }
+  return parts.slice(-2).join(", ") || location;
+}
+
 /** Whether an event's end (or start, if no end) is in the past. */
 export function isEventOver(event: {
   starts_at: string;

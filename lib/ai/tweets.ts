@@ -78,35 +78,8 @@ function textOf(message: Anthropic.Message): string {
 }
 
 /**
- * Best-effort current AI/dev news digest via server-side web search. Returns a
- * short text block (with source URLs) or null — any failure degrades silently
- * so the draft still ships from site activity alone.
- */
-export async function fetchAiNewsDigest(): Promise<string | null> {
-  if (!client) return null;
-  try {
-    const res = await client.messages.create({
-      model: MODEL,
-      max_tokens: 1024,
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 3 }],
-      messages: [
-        {
-          role: "user",
-          content:
-            "Find 2-3 genuinely notable AI or developer-tooling news items from the last 2 days (model releases, major tool launches, noteworthy posts). For each: a one-line summary and the source URL. Be brief and factual.",
-        },
-      ],
-    });
-    const text = textOf(res).trim();
-    return text.length > 0 ? text : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Generate 2-3 tweet options for today from the community material (and, if
- * available, a news digest). Structured output guarantees a parseable shape.
+ * provided, a dev-news digest). Structured output guarantees a parseable shape.
  */
 export async function generateTweetOptions(
   material: string,
@@ -129,8 +102,10 @@ export async function generateTweetOptions(
     "",
     material || "(quiet day — lean on an evergreen angle)",
     "",
-    newsDigest ? `Recent AI/developer news (cite the source URL if you use one):\n${newsDigest}\n` : "",
-    "Write 2-3 distinct tweet options for today. Favor timely, specific items (an upcoming event, a fresh project/tool, an active discussion) over generic posts. Vary the angle across options. Each must follow every rule in your instructions.",
+    newsDigest
+      ? `Top items right now from Hacker News, Reddit, and Dev.to — react to one if it's genuinely interesting to AI builders, and link the source URL exactly as given:\n${newsDigest}\n`
+      : "",
+    "Write 2-3 distinct tweet options for today. Mix angles: a community item (an upcoming event, a fresh project/tool, an active discussion) AND, when the news above is interesting, a take on one dev/AI story. Favor timely, specific posts over generic ones. Each must follow every rule in your instructions.",
   ].join("\n");
 
   const res = await client.messages.create({

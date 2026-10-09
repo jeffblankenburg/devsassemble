@@ -3,6 +3,9 @@
 import { useActionState, useState } from "react";
 import {
   approveAndPost,
+  scheduleTweet,
+  unscheduleTweet,
+  postScheduledNow,
   rejectTweet,
   generateNow,
   type TweetActionState,
@@ -10,6 +13,7 @@ import {
 import { tweetLength, TWEET_MAX } from "@/lib/tweets/length";
 import { ComicButton } from "@/components/brand/comic-button";
 import { ComicSwitch } from "@/components/profile/comic-switch";
+import { ComicDateTimePicker } from "@/components/admin/comic-date-time-picker";
 import type { TweetRow, TweetAlternative } from "@/lib/tweets/queries";
 
 function KindTag({ kind }: { kind: string }) {
@@ -44,13 +48,28 @@ export function GenerateButton() {
 
 function TweetCard({ draft }: { draft: TweetRow }) {
   const [body, setBody] = useState(draft.body);
+  const [schedLocal, setSchedLocal] = useState("");
   const [state, action, pending] = useActionState<TweetActionState, FormData>(
     approveAndPost,
     {},
   );
+  const [schedState, schedAction, schedPending] = useActionState<
+    TweetActionState,
+    FormData
+  >(scheduleTweet, {});
 
   const len = tweetLength(body);
   const over = len > TWEET_MAX;
+
+  if (schedState.ok) {
+    return (
+      <li className="rounded-[var(--radius-comic)] border-ink bg-brand-blue/15 p-4 shadow-comic">
+        <p className="font-display uppercase tracking-wide text-brand-ink">
+          Scheduled ✓ — it&apos;ll cross-post automatically at the set time.
+        </p>
+      </li>
+    );
+  }
 
   if (state.ok) {
     return (
@@ -129,6 +148,32 @@ function TweetCard({ draft }: { draft: TweetRow }) {
         </div>
       </form>
 
+      <form
+        action={schedAction}
+        className="mt-3 flex flex-wrap items-center gap-2 border-t-2 border-brand-ink/10 pt-3"
+      >
+        <input type="hidden" name="id" value={draft.id} />
+        <input type="hidden" name="source_url" value={draft.source_url ?? ""} />
+        <input type="hidden" name="body" value={body} />
+        <input
+          type="hidden"
+          name="scheduled_for"
+          value={schedLocal ? new Date(schedLocal).toISOString() : ""}
+        />
+        <span className="text-sm text-brand-ink/70">…or schedule for</span>
+        <ComicDateTimePicker name="_sched" onChange={setSchedLocal} />
+        <button
+          type="submit"
+          disabled={schedPending || over || body.trim().length === 0 || !schedLocal}
+          className="focus-comic rounded-md border-ink bg-surface px-4 py-2 font-display text-sm uppercase tracking-wide text-brand-ink shadow-comic-sm transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+        >
+          {schedPending ? "Scheduling…" : "Schedule"}
+        </button>
+        {schedState.error && (
+          <span className="text-sm text-brand-purple">{schedState.error}</span>
+        )}
+      </form>
+
       {draft.alternatives.length > 0 && (
         <div className="mt-3 border-t-2 border-brand-ink/10 pt-3">
           <p className="font-display text-xs uppercase tracking-wide text-brand-ink/50">
@@ -161,6 +206,53 @@ function TweetCard({ draft }: { draft: TweetRow }) {
         </button>
       </form>
     </li>
+  );
+}
+
+export function ScheduledList({ scheduled }: { scheduled: TweetRow[] }) {
+  if (scheduled.length === 0) return null;
+  return (
+    <ul className="mt-4 flex flex-col gap-3">
+      {scheduled.map((t) => (
+        <li
+          key={t.id}
+          className="rounded-[var(--radius-comic)] border-ink bg-surface p-4 shadow-comic"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-md border-[2px] border-brand-ink bg-brand-blue px-2 py-0.5 font-display text-xs uppercase tracking-wide text-white">
+              Scheduled
+            </span>
+            <span
+              suppressHydrationWarning
+              className="font-mono text-xs text-brand-ink/70"
+            >
+              {t.scheduled_for ? new Date(t.scheduled_for).toLocaleString() : ""}
+            </span>
+          </div>
+          <p className="mt-2 text-brand-ink/85">{t.body}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <form action={postScheduledNow}>
+              <input type="hidden" name="id" value={t.id} />
+              <button
+                type="submit"
+                className="focus-comic rounded-md border-ink bg-brand-blue px-3 py-1 font-display text-xs uppercase tracking-wide text-white shadow-comic-sm"
+              >
+                Post now
+              </button>
+            </form>
+            <form action={unscheduleTweet}>
+              <input type="hidden" name="id" value={t.id} />
+              <button
+                type="submit"
+                className="focus-comic rounded-md border-ink bg-surface px-3 py-1 font-display text-xs uppercase tracking-wide text-brand-ink shadow-comic-sm hover:bg-brand-cream"
+              >
+                Cancel → drafts
+              </button>
+            </form>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 

@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth/dal";
-import { listDraftTweets, listRecentPostedTweets } from "@/lib/tweets/queries";
-import { GenerateButton, TweetQueue } from "@/components/admin/tweet-queue";
+import {
+  listDraftTweets,
+  listScheduledTweets,
+  listRecentPostedTweets,
+} from "@/lib/tweets/queries";
+import {
+  GenerateButton,
+  TweetQueue,
+  ScheduledList,
+} from "@/components/admin/tweet-queue";
 
 export const metadata: Metadata = { title: "Tweets" };
 
 export default async function AdminTweetsPage() {
   await requireAdmin();
-  const [drafts, posted] = await Promise.all([
+  const [drafts, scheduled, posted] = await Promise.all([
     listDraftTweets(),
+    listScheduledTweets(),
     listRecentPostedTweets(10),
   ]);
 
@@ -47,6 +56,15 @@ export default async function AdminTweetsPage() {
         Drafts
       </h2>
       <TweetQueue drafts={drafts} />
+
+      {scheduled.length > 0 && (
+        <>
+          <h2 className="mt-12 font-display text-2xl uppercase tracking-wide text-brand-ink">
+            Scheduled
+          </h2>
+          <ScheduledList scheduled={scheduled} />
+        </>
+      )}
 
       {posted.length > 0 && (
         <>

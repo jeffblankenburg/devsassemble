@@ -2,11 +2,8 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { gatherTweetMaterial } from "@/lib/tweets/gather";
-import {
-  generateTweetOptions,
-  fetchAiNewsDigest,
-  type TweetOption,
-} from "@/lib/ai/tweets";
+import { fetchDevNews, devNewsToText } from "@/lib/tweets/sources";
+import { generateTweetOptions, type TweetOption } from "@/lib/ai/tweets";
 
 export type DraftResult =
   | { ok: true; id: string; optionCount: number; preview: string }
@@ -27,7 +24,11 @@ export async function draftTweets(opts?: {
 }): Promise<DraftResult> {
   const now = opts?.now ?? new Date();
   const material = await gatherTweetMaterial(now);
-  const news = opts?.includeNews ? await fetchAiNewsDigest() : null;
+  let news: string | null = null;
+  if (opts?.includeNews) {
+    const items = await fetchDevNews();
+    news = items.length ? devNewsToText(items) : null;
+  }
 
   let options: TweetOption[] = [];
   try {

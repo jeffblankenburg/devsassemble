@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { EventRow } from "@/lib/events/queries";
-import { formatDateParts, tzLabel } from "@/lib/events/format";
+import { formatDateParts, tzLabel, shortLocation } from "@/lib/events/format";
 
 const ACCENT: Record<EventRow["accent"], string> = {
   blue: "bg-brand-blue text-white",
@@ -11,6 +11,12 @@ const ACCENT: Record<EventRow["accent"], string> = {
 /** Compact "next up" teaser for the next upcoming event (hero). */
 export function NextEvent({ event }: { event: EventRow }) {
   const d = formatDateParts(event.starts_at, event.timezone);
+  const place = event.is_virtual
+    ? "Virtual"
+    : event.location
+      ? shortLocation(event.location)
+      : null;
+  const meta = [event.host, place].filter(Boolean).join(" · ");
 
   return (
     <Link
@@ -31,6 +37,11 @@ export function NextEvent({ event }: { event: EventRow }) {
         <p className="line-clamp-1 font-display text-base uppercase leading-tight tracking-wide text-brand-ink group-hover:text-brand-blue">
           {event.title}
         </p>
+        {meta && (
+          <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-widest text-muted">
+            {meta}
+          </span>
+        )}
       </div>
     </Link>
   );

@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/tweet-draft",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/tweet-publish",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

@@ -10,6 +10,12 @@ export function SiteFooter() {
         </p>
         <nav className="flex gap-4" aria-label="Footer">
           <Link
+            href="/about"
+            className="focus-comic text-sm text-brand-ink/75 hover:text-brand-blue"
+          >
+            About
+          </Link>
+          <Link
             href="/events"
             className="focus-comic text-sm text-brand-ink/75 hover:text-brand-blue"
           >

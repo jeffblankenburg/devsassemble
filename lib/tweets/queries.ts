@@ -11,13 +11,14 @@ export type TweetAlternative = {
 
 export type TweetRow = {
   id: string;
-  status: "draft" | "posted" | "rejected";
+  status: "draft" | "scheduled" | "posted" | "rejected";
   kind: string;
   body: string;
   source_url: string | null;
   rationale: string | null;
   alternatives: TweetAlternative[];
   created_for: string;
+  scheduled_for: string | null;
   posted_url: string | null;
   bluesky_url: string | null;
   posted_at: string | null;
@@ -25,7 +26,7 @@ export type TweetRow = {
 };
 
 const COLUMNS =
-  "id, status, kind, body, source_url, rationale, alternatives, created_for, posted_url, bluesky_url, posted_at, created_at";
+  "id, status, kind, body, source_url, rationale, alternatives, created_for, scheduled_for, posted_url, bluesky_url, posted_at, created_at";
 
 export async function listDraftTweets(): Promise<TweetRow[]> {
   const admin = createAdminClient();
@@ -34,6 +35,17 @@ export async function listDraftTweets(): Promise<TweetRow[]> {
     .select(COLUMNS)
     .eq("status", "draft")
     .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as TweetRow[];
+}
+
+export async function listScheduledTweets(): Promise<TweetRow[]> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("tweets")
+    .select(COLUMNS)
+    .eq("status", "scheduled")
+    .order("scheduled_for", { ascending: true });
   if (error) throw error;
   return (data ?? []) as TweetRow[];
 }
