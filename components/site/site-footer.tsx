@@ -27,6 +27,14 @@ export function SiteFooter() {
           >
             Sign in
           </Link>
+          <a
+            href="https://x.com/devsassembleAI"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="focus-comic text-sm text-brand-ink/75 hover:text-brand-blue"
+          >
+            @devsassembleAI
+          </a>
         </nav>
       </div>
     </footer>

@@ -332,3 +332,24 @@ export function NewReportEmail({
     </Layout>
   );
 }
+
+export function TweetDraftsReadyEmail({
+  preview,
+  reviewUrl,
+}: {
+  preview: string;
+  reviewUrl: string;
+}) {
+  return (
+    <Layout preview="Today's tweet drafts are ready" accent="lime">
+      <Heading style={h1}>Today&apos;s tweet drafts are ready 🐦</Heading>
+      <Text style={p}>Claude drafted today&apos;s options for @devsassembleAI:</Text>
+      <Text style={quote}>{preview}</Text>
+      <Text style={p}>
+        Review, edit, and post the one you like — nothing goes out without your
+        approval.
+      </Text>
+      <CTA href={reviewUrl} accent="lime" label="Review & post" />
+    </Layout>
+  );
+}

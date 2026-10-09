@@ -17,6 +17,12 @@ const SECTIONS = [
     body: "Review flagged topics and replies. Resolve or dismiss moderation reports.",
     accent: "bg-brand-purple text-white",
   },
+  {
+    href: "/admin/tweets",
+    title: "Tweets",
+    body: "Review daily @devsassembleAI drafts, edit, and post to X.",
+    accent: "bg-brand-lime text-brand-ink",
+  },
 ];
 
 export default async function AdminPage() {

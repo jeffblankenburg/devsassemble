@@ -18,6 +18,7 @@ import {
   ReportResolvedEmail,
   AccountSuspendedEmail,
   NewReportEmail,
+  TweetDraftsReadyEmail,
 } from "@/lib/email/templates";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -218,4 +219,23 @@ export async function notifyAccountSuspended(userId: string): Promise<void> {
     subject: "Your DevsAssemble account has been suspended",
     element: <AccountSuspendedEmail name={name} />,
   }));
+}
+
+/** Tell admins/mods (who haven't muted moderation mail) that drafts are ready. */
+export async function notifyTweetDrafts(preview: string): Promise<void> {
+  const admin: AdminClient = createAdminClient();
+  const { data: mods } = await admin
+    .from("profiles")
+    .select("id")
+    .in("role", ["admin", "moderator"]);
+  const reviewUrl = `${SITE_URL}/admin/tweets`;
+
+  await Promise.all(
+    (mods ?? []).map((m) =>
+      sendToUser((m as { id: string }).id, "moderation", () => ({
+        subject: "Today's @devsassembleAI tweet drafts are ready",
+        element: <TweetDraftsReadyEmail preview={preview} reviewUrl={reviewUrl} />,
+      })),
+    ),
+  );
 }

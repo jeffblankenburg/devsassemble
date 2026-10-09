@@ -1,0 +1,114 @@
+import "server-only";
+
+import { createAdminClient } from "@/lib/supabase/admin";
+import { SITE_URL } from "@/lib/email/config";
+import { upcomingOccurrences } from "@/lib/events/recurrence";
+import { formatFullDate, formatTime, tzLabel } from "@/lib/events/format";
+import type { EventRow } from "@/lib/events/queries";
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+const EVENT_COLUMNS =
+  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, is_virtual, host, accent, status, recurrence, recurrence_until, recurrence_exceptions, is_live, stream_embed_url, created_by, created_at, updated_at";
+
+export type TweetMaterial = { text: string; hasContent: boolean };
+
+/**
+ * Pull the week's worth of community activity Claude can tweet about — upcoming
+ * events, fresh projects/tools, active discussions, and member count. Returns a
+ * plain-text brief (with canonical devsassemble.ai links) for the prompt.
+ */
+export async function gatherTweetMaterial(now = new Date()): Promise<TweetMaterial> {
+  const admin = createAdminClient();
+  const sinceIso = new Date(now.getTime() - WEEK_MS).toISOString();
+  const soonMs = now.getTime() + WEEK_MS;
+  const lines: string[] = [];
+
+  // Upcoming events (next 7 days), recurring series expanded.
+  const { data: eventRows } = await admin
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .eq("status", "published");
+  const events = ((eventRows ?? []) as EventRow[])
+    .flatMap((e) => upcomingOccurrences(e, now, 1))
+    .filter((e) => {
+      const ms = new Date(e.starts_at).getTime();
+      return ms >= now.getTime() && ms <= soonMs;
+    })
+    .sort((a, b) => (a.starts_at < b.starts_at ? -1 : 1))
+    .slice(0, 3);
+  if (events.length) {
+    lines.push("UPCOMING EVENTS:");
+    for (const e of events) {
+      const when = `${formatFullDate(e.starts_at, e.timezone)} at ${formatTime(e.starts_at, e.timezone)} (${tzLabel(e.timezone)})`;
+      lines.push(`- "${e.title}" — ${when}${e.is_virtual ? " · online" : ""} — ${SITE_URL}/events/${e.slug}`);
+    }
+  }
+
+  // Recently shared projects/repos.
+  const { data: repos } = await admin
+    .from("repos")
+    .select("owner, name, description, kind, github_url, created_at")
+    .gte("created_at", sinceIso)
+    .order("created_at", { ascending: false })
+    .limit(4);
+  if (repos?.length) {
+    lines.push("\nNEW PROJECTS (browse at " + SITE_URL + "/projects):");
+    for (const r of repos as {
+      owner: string;
+      name: string;
+      description: string | null;
+      kind: string;
+      github_url: string;
+    }[]) {
+      lines.push(`- ${r.owner}/${r.name}${r.description ? ` — ${r.description}` : ""} (${r.github_url})`);
+    }
+  }
+
+  // Recently shared tools.
+  const { data: tools } = await admin
+    .from("tools")
+    .select("name, description, category, url, created_at")
+    .gte("created_at", sinceIso)
+    .order("created_at", { ascending: false })
+    .limit(4);
+  if (tools?.length) {
+    lines.push("\nNEW TOOLS (browse at " + SITE_URL + "/tools):");
+    for (const t of tools as {
+      name: string;
+      description: string | null;
+      category: string;
+      url: string;
+    }[]) {
+      lines.push(`- ${t.name}${t.description ? ` — ${t.description}` : ""} (${t.url})`);
+    }
+  }
+
+  // Active discussions.
+  const { data: topics } = await admin
+    .from("topics")
+    .select("title, slug, reply_count, last_activity_at")
+    .gte("last_activity_at", sinceIso)
+    .order("reply_count", { ascending: false })
+    .limit(3);
+  if (topics?.length) {
+    lines.push("\nACTIVE DISCUSSIONS:");
+    for (const t of topics as {
+      title: string;
+      slug: string;
+      reply_count: number;
+    }[]) {
+      lines.push(`- "${t.title}" (${t.reply_count} replies) — ${SITE_URL}/discussions/${t.slug}`);
+    }
+  }
+
+  // Member milestone context.
+  const { count: memberCount } = await admin
+    .from("profiles")
+    .select("id", { count: "exact", head: true });
+  if (memberCount) {
+    lines.push(`\nCOMMUNITY: ${memberCount} members and growing (${SITE_URL}).`);
+  }
+
+  return { text: lines.join("\n"), hasContent: lines.length > 0 };
+}
