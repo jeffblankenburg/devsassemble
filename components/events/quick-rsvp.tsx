@@ -40,12 +40,14 @@ function Chip({
 export function QuickRsvp({
   eventId,
   slug,
+  occurrenceStart,
   currentStatus,
   isAuthed,
   loginHref,
 }: {
   eventId: string;
   slug: string;
+  occurrenceStart: string;
   currentStatus: RsvpStatus | null;
   isAuthed: boolean;
   loginHref: string;
@@ -62,6 +64,7 @@ export function QuickRsvp({
     <>
       <input type="hidden" name="event_id" value={eventId} />
       <input type="hidden" name="slug" value={slug} />
+      <input type="hidden" name="occurrence_start" value={occurrenceStart} />
     </>
   );
   const going = currentStatus === "going";

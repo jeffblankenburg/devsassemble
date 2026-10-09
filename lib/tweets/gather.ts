@@ -9,7 +9,7 @@ import type { EventRow } from "@/lib/events/queries";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 const EVENT_COLUMNS =
-  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, is_virtual, host, accent, status, recurrence, recurrence_until, recurrence_exceptions, is_live, stream_embed_url, created_by, created_at, updated_at";
+  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, is_virtual, host, accent, status, recurrence, recurrence_until, recurrence_exceptions, rrule, recurrence_count, recurrence_overrides, is_live, stream_embed_url, created_by, created_at, updated_at";
 
 export type TweetMaterial = { text: string; hasContent: boolean };
 

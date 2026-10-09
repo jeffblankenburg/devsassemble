@@ -1,21 +1,19 @@
-import type { EventRow, RecurrenceFreq } from "./queries";
+import { RRule } from "rrule";
+import type { EventRow } from "./queries";
 import { getZonedParts, zonedWallClockToUtcIso } from "./format";
 
-// Recurring events are stored as a SINGLE row (one base `starts_at` + an RRULE).
-// Calendar clients expand the RRULE themselves; the website doesn't, so we
-// expand occurrences at read time here. Occurrences preserve the event's LOCAL
-// wall-clock across DST (like the iCal feed's TZID), and dates listed in
-// `recurrence_exceptions` are surfaced as cancelled rather than dropped.
+// Recurring events are stored as a SINGLE row: one base `starts_at` plus an
+// RFC-5545 RRULE pattern body (`rrule`), an optional end (`recurrence_count` or
+// `recurrence_until`), and skipped dates (`recurrence_exceptions`). Calendar
+// clients expand the RRULE themselves; the website expands at read time here.
+//
+// DST handling is the crux: we expand the rule in the event's LOCAL wall-clock
+// (so "5:30pm on the 4th Thursday" stays 5:30pm every month), then convert each
+// occurrence to a true UTC instant using the zone's offset ON THAT DATE. The
+// hour-of-UTC shifts across spring-forward/fall-back; the local time does not.
 
 const DAY_MS = 86_400_000;
-
-const NOMINAL_DAYS: Record<RecurrenceFreq, number> = {
-  none: 0,
-  daily: 1,
-  weekly: 7,
-  biweekly: 14,
-  monthly: 30,
-};
+const HORIZON_MS = 5 * 365.25 * DAY_MS; // how far ahead to look for "upcoming"
 
 const pad = (n: number, width = 2) => String(n).padStart(width, "0");
 
@@ -26,66 +24,92 @@ function localDate(iso: string, tz: string): string {
 }
 
 /**
- * The start of the `step`-th occurrence (step 0 = the base event), as a true
- * UTC ISO string, holding the event's local time-of-day fixed across DST.
+ * A UTC instant → a "naive-local" Date whose UTC fields equal the wall-clock
+ * parts seen in `tz`. This is the frame rrule expands in.
  */
-function occurrenceStart(
-  baseIso: string,
-  tz: string,
-  freq: RecurrenceFreq,
-  step: number,
-): string {
-  const p = getZonedParts(baseIso, tz);
-  let y = Number(p.year);
-  let mo = Number(p.month);
-  let d = Number(p.day);
+function naiveLocal(iso: string, tz: string): Date {
+  const p = getZonedParts(iso, tz);
+  return new Date(
+    Date.UTC(
+      Number(p.year),
+      Number(p.month) - 1,
+      Number(p.day),
+      Number(p.hour),
+      Number(p.minute),
+      Number(p.second),
+    ),
+  );
+}
 
-  if (freq === "monthly") {
-    const dt = new Date(Date.UTC(y, mo - 1 + step, d));
-    y = dt.getUTCFullYear();
-    mo = dt.getUTCMonth() + 1;
-    d = dt.getUTCDate();
-  } else {
-    const dt = new Date(Date.UTC(y, mo - 1, d) + step * NOMINAL_DAYS[freq] * DAY_MS);
-    y = dt.getUTCFullYear();
-    mo = dt.getUTCMonth() + 1;
-    d = dt.getUTCDate();
+/** A naive-local Date (from rrule) → the true UTC ISO instant in `tz`. */
+function naiveToUtcIso(d: Date, tz: string): string {
+  const local = `${pad(d.getUTCFullYear(), 4)}-${pad(d.getUTCMonth() + 1)}-${pad(
+    d.getUTCDate(),
+  )}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+  return zonedWallClockToUtcIso(local, tz) ?? d.toISOString();
+}
+
+/** Build the rrule for an event in its naive-local frame, or null if one-off. */
+function buildRule(event: EventRow): RRule | null {
+  if (!event.rrule) return null;
+  const tz = event.timezone;
+  try {
+    const opts = RRule.parseString(event.rrule);
+    opts.dtstart = naiveLocal(event.starts_at, tz);
+    if (event.recurrence_count && event.recurrence_count > 0) {
+      opts.count = event.recurrence_count;
+    }
+    if (event.recurrence_until) {
+      const [y, m, d] = event.recurrence_until.split("-").map(Number);
+      // End of the until-date in the local frame (occurrences are naive-local).
+      opts.until = new Date(Date.UTC(y, m - 1, d, 23, 59, 59));
+    }
+    return new RRule(opts);
+  } catch {
+    return null; // malformed rule → treat as non-recurring
   }
-
-  const local = `${pad(y, 4)}-${pad(mo)}-${pad(d)}T${p.hour}:${p.minute}:${p.second}`;
-  return zonedWallClockToUtcIso(local, tz) ?? baseIso;
 }
 
-/** End-of-day instant (ms) for a recurrence_until date, in the event's zone. */
-function untilMs(untilDate: string, tz: string): number {
-  const iso = zonedWallClockToUtcIso(`${untilDate}T23:59:59`, tz);
-  return iso ? new Date(iso).getTime() : Number.POSITIVE_INFINITY;
-}
-
-/** Shape a base event into a concrete occurrence (unique key, cancelled flag). */
+/**
+ * Shape a base event into a concrete occurrence. `origDate` is the occurrence's
+ * ORIGINAL local date (the key for cancel/move), while `startIso` is its
+ * effective instant — which differs from the original when the occurrence was
+ * moved. Keying by origDate keeps cancel/move stable across a move.
+ */
 function materialize(
   event: EventRow,
   startIso: string,
-  tz: string,
+  origDate: string,
   durationMs: number | null,
 ): EventRow {
   const startMs = new Date(startIso).getTime();
   const cancelled =
     event.status === "cancelled" ||
-    event.recurrence_exceptions.includes(localDate(startIso, tz));
+    event.recurrence_exceptions.includes(origDate);
   return {
     ...event,
     starts_at: startIso,
     ends_at: durationMs != null ? new Date(startMs + durationMs).toISOString() : null,
     status: cancelled ? "cancelled" : event.status,
-    occurrenceKey: `${event.id}-${startIso}`,
+    occurrenceKey: `${event.id}-${origDate}`,
   };
 }
 
+/** Map of original-date → moved instant for an event's overrides. */
+function overrideMap(event: EventRow): Map<string, string> {
+  return new Map(event.recurrence_overrides.map((o) => [o.date, o.starts_at]));
+}
+
+function durationOf(event: EventRow): number | null {
+  return event.ends_at
+    ? new Date(event.ends_at).getTime() - new Date(event.starts_at).getTime()
+    : null;
+}
+
 /**
- * The next up-to-`count` occurrences of an event at or after `now`. Cancelled
- * (skipped) dates are included and flagged, so they show struck-through and
- * still count toward the window — matching the chronological "next two".
+ * The next up-to-`count` occurrences at or after `now`. Cancelled (skipped)
+ * dates are included and flagged, so they show struck-through and still count
+ * toward the window.
  */
 export function upcomingOccurrences(
   event: EventRow,
@@ -93,95 +117,89 @@ export function upcomingOccurrences(
   count: number,
 ): EventRow[] {
   const tz = event.timezone;
+  const durationMs = durationOf(event);
   const nowMs = now.getTime();
-  const durationMs = event.ends_at
-    ? new Date(event.ends_at).getTime() - new Date(event.starts_at).getTime()
-    : null;
 
-  if (event.recurrence === "none") {
+  const rule = buildRule(event);
+  if (!rule) {
     return new Date(event.starts_at).getTime() >= nowMs
-      ? [materialize(event, event.starts_at, tz, durationMs)]
+      ? [materialize(event, event.starts_at, localDate(event.starts_at, tz), durationMs)]
       : [];
   }
 
-  const baseMs = new Date(event.starts_at).getTime();
-  const until = event.recurrence_until ? untilMs(event.recurrence_until, tz) : null;
-  // Skip ahead near `now` so long-running series don't loop from the start.
-  let step = Math.max(
-    0,
-    Math.floor((nowMs - baseMs) / (NOMINAL_DAYS[event.recurrence] * DAY_MS)) - 2,
-  );
+  const overrides = overrideMap(event);
+  const nowLocal = naiveLocal(now.toISOString(), tz);
+  const horizon = new Date(nowLocal.getTime() + HORIZON_MS);
 
-  const out: EventRow[] = [];
-  for (let guard = 0; guard < 800 && out.length < count; guard++, step++) {
-    const iso = occurrenceStart(event.starts_at, tz, event.recurrence, step);
-    const ms = new Date(iso).getTime();
-    if (ms < nowMs) continue;
-    if (until != null && ms > until) break;
-    out.push(materialize(event, iso, tz, durationMs));
-  }
-  return out;
+  // Apply moves, then re-sort by effective start (a move changes the order) and
+  // keep only still-upcoming instances.
+  return rule
+    .between(nowLocal, horizon, true)
+    .map((d) => {
+      const origIso = naiveToUtcIso(d, tz);
+      const origDate = localDate(origIso, tz);
+      const startIso = overrides.get(origDate) ?? origIso;
+      return materialize(event, startIso, origDate, durationMs);
+    })
+    .filter((r) => new Date(r.starts_at).getTime() >= nowMs)
+    .sort((a, b) => (a.starts_at < b.starts_at ? -1 : 1))
+    .slice(0, count);
 }
 
-/** The most recent occurrence strictly before `now`, or null if none / still active. */
+/** The most recent occurrence before `now`, or null if the series is still active. */
 export function latestPastOccurrence(event: EventRow, now: Date): EventRow | null {
   const tz = event.timezone;
-  const nowMs = now.getTime();
-  const durationMs = event.ends_at
-    ? new Date(event.ends_at).getTime() - new Date(event.starts_at).getTime()
-    : null;
+  const durationMs = durationOf(event);
 
-  if (event.recurrence === "none") {
-    return new Date(event.starts_at).getTime() < nowMs
-      ? materialize(event, event.starts_at, tz, durationMs)
+  // A series with any upcoming occurrence is never "past".
+  if (upcomingOccurrences(event, now, 1).length > 0) return null;
+
+  const rule = buildRule(event);
+  if (!rule) {
+    return new Date(event.starts_at).getTime() < now.getTime()
+      ? materialize(event, event.starts_at, localDate(event.starts_at, tz), durationMs)
       : null;
   }
 
-  // An open-ended series always has a future occurrence, so it's never "past".
-  const until = event.recurrence_until ? untilMs(event.recurrence_until, tz) : null;
-  if (until == null || until >= nowMs) return null;
-
-  const baseMs = new Date(event.starts_at).getTime();
-  let step = Math.max(
-    0,
-    Math.floor((until - baseMs) / (NOMINAL_DAYS[event.recurrence] * DAY_MS)) - 2,
-  );
-  let last: EventRow | null = null;
-  for (let guard = 0; guard < 800; guard++, step++) {
-    const iso = occurrenceStart(event.starts_at, tz, event.recurrence, step);
-    const ms = new Date(iso).getTime();
-    if (ms > until) break;
-    if (ms < nowMs) last = materialize(event, iso, tz, durationMs);
-  }
-  return last;
+  const last = rule.before(naiveLocal(now.toISOString(), tz), true);
+  if (!last) return null;
+  const origIso = naiveToUtcIso(last, tz);
+  const origDate = localDate(origIso, tz);
+  const startIso = overrideMap(event).get(origDate) ?? origIso;
+  return materialize(event, startIso, origDate, durationMs);
 }
 
-export type OccurrenceSlot = { date: string; iso: string; cancelled: boolean };
+export type OccurrenceSlot = {
+  date: string; // original local date (the key)
+  iso: string; // original instant
+  cancelled: boolean;
+  movedToIso: string | null; // effective instant if moved, else null
+};
 
-/** Upcoming occurrence dates for the admin skip/restore UI. */
+/** Upcoming occurrence dates for the admin skip/restore/move UI. */
 export function listOccurrenceSlots(
   event: EventRow,
   now: Date,
   count: number,
 ): OccurrenceSlot[] {
-  if (event.recurrence === "none") return [];
   const tz = event.timezone;
-  const nowMs = now.getTime();
-  const baseMs = new Date(event.starts_at).getTime();
-  const until = event.recurrence_until ? untilMs(event.recurrence_until, tz) : null;
-  let step = Math.max(
-    0,
-    Math.floor((nowMs - baseMs) / (NOMINAL_DAYS[event.recurrence] * DAY_MS)) - 2,
-  );
+  const rule = buildRule(event);
+  if (!rule) return [];
 
-  const out: OccurrenceSlot[] = [];
-  for (let guard = 0; guard < 800 && out.length < count; guard++, step++) {
-    const iso = occurrenceStart(event.starts_at, tz, event.recurrence, step);
-    const ms = new Date(iso).getTime();
-    if (ms < nowMs) continue;
-    if (until != null && ms > until) break;
-    const date = localDate(iso, tz);
-    out.push({ date, iso, cancelled: event.recurrence_exceptions.includes(date) });
-  }
-  return out;
+  const overrides = overrideMap(event);
+  const nowLocal = naiveLocal(now.toISOString(), tz);
+  const horizon = new Date(nowLocal.getTime() + HORIZON_MS);
+  return rule
+    .between(nowLocal, horizon, true)
+    .slice(0, count)
+    .map((d) => {
+      const iso = naiveToUtcIso(d, tz);
+      const date = localDate(iso, tz);
+      return {
+        date,
+        iso,
+        cancelled: event.recurrence_exceptions.includes(date),
+        movedToIso: overrides.get(date) ?? null,
+      };
+    });
 }

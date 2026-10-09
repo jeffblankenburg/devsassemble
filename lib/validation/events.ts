@@ -44,11 +44,24 @@ export const eventSchema = z.object({
     .max(300)
     .optional()
     .or(z.literal("")),
+  rsvp_url: z
+    .url({ error: "Enter a valid RSVP URL (https://…)." })
+    .max(300)
+    .optional()
+    .or(z.literal("")),
   host: z.string().trim().max(80).optional().or(z.literal("")),
   accent: eventAccentEnum,
   status: eventStatusEnum,
-  recurrence: z.enum(["none", "daily", "weekly", "biweekly", "monthly"]),
-  recurrence_until: z.string().optional().or(z.literal("")),
+  // Recurrence is assembled into an RRULE in the action from these fields.
+  recur_freq: z
+    .enum(["none", "daily", "weekly", "monthly", "yearly"])
+    .default("none"),
+  recur_interval: z.coerce.number().int().min(1).max(999).default(1),
+  recur_byday: z.string().optional().or(z.literal("")), // "MO,WE,FR"
+  recur_month_mode: z.enum(["dayofmonth", "weekday"]).default("dayofmonth"),
+  recur_end: z.enum(["never", "count", "until"]).default("never"),
+  recur_count: z.coerce.number().int().min(1).max(999).optional(),
+  recur_until: z.string().optional().or(z.literal("")), // YYYY-MM-DD
 });
 
 export type EventInput = z.infer<typeof eventSchema>;

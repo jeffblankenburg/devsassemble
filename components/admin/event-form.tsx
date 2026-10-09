@@ -7,10 +7,15 @@ import {
   type EventFormState,
 } from "@/lib/events/actions";
 import { toDatetimeLocalValue } from "@/lib/events/format";
+import { parseRuleBody } from "@/lib/events/rrule";
 import { ComicButton } from "@/components/brand/comic-button";
 import { ChoiceChips, ColorSwatches } from "@/components/ui/choice-chips";
 import { ComicDateTimePicker } from "@/components/admin/comic-date-time-picker";
 import { TitleSlugFields } from "@/components/admin/title-slug-fields";
+import {
+  RecurrenceEditor,
+  type RecurrenceInitial,
+} from "@/components/admin/recurrence-editor";
 import type { EventRow } from "@/lib/events/queries";
 
 const inputClass =
@@ -39,9 +44,12 @@ function Field({
 export function EventForm({
   mode,
   event,
+  canAdmin = true,
 }: {
   mode: "create" | "edit";
   event?: EventRow;
+  /** Admins/mods get draft control; members auto-publish. */
+  canAdmin?: boolean;
 }) {
   const action = mode === "create" ? createEvent : updateEvent;
   const [state, formAction, pending] = useActionState<EventFormState, FormData>(
@@ -49,9 +57,35 @@ export function EventForm({
     {},
   );
   const [isVirtual, setIsVirtual] = useState(event?.is_virtual ?? true);
-  const [recurrence, setRecurrence] = useState<string>(
-    event?.recurrence ?? "none",
-  );
+
+  // Track the start date live so the recurrence editor's monthly labels
+  // ("the 4th Thursday") update as the admin picks a date — even on create.
+  const startLocal = event
+    ? toDatetimeLocalValue(event.starts_at, event.timezone)
+    : "";
+  const [startValue, setStartValue] = useState(startLocal);
+  const startDate =
+    startValue.length >= 10
+      ? {
+          year: Number(startValue.slice(0, 4)),
+          month: Number(startValue.slice(5, 7)),
+          day: Number(startValue.slice(8, 10)),
+        }
+      : null;
+  const parsed = parseRuleBody(event?.rrule ?? null);
+  const recurrenceInitial: RecurrenceInitial = {
+    freq: parsed.freq,
+    interval: parsed.interval,
+    byday: parsed.byday,
+    monthMode: parsed.monthMode,
+    end: event?.recurrence_count
+      ? "count"
+      : event?.recurrence_until
+        ? "until"
+        : "never",
+    count: event?.recurrence_count ?? null,
+    until: event?.recurrence_until ?? null,
+  };
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -89,11 +123,8 @@ export function EventForm({
         <Field label="Starts" hint="Interpreted as the timezone below.">
           <ComicDateTimePicker
             name="starts_at"
-            defaultValue={
-              event
-                ? toDatetimeLocalValue(event.starts_at, event.timezone)
-                : undefined
-            }
+            defaultValue={startLocal || undefined}
+            onChange={setStartValue}
           />
         </Field>
         <Field label="Ends (optional)">
@@ -150,15 +181,42 @@ export function EventForm({
           />
         </Field>
       ) : (
-        <Field label="Location" hint="Venue name and/or address.">
-          <input
-            name="location"
-            defaultValue={event?.location ?? ""}
-            placeholder="Venue, city"
-            className={inputClass}
-          />
-        </Field>
+        <>
+          <Field label="Location" hint="Venue name and/or address — links to a map.">
+            <input
+              name="location"
+              defaultValue={event?.location ?? ""}
+              placeholder="Venue, city"
+              className={inputClass}
+            />
+          </Field>
+          <Field
+            label="Website (optional)"
+            hint="For conferences and events run elsewhere — link out to their own site. We don't manage those."
+          >
+            <input
+              name="url"
+              type="url"
+              defaultValue={event?.url ?? ""}
+              placeholder="https://… (the event's official site)"
+              className={inputClass}
+            />
+          </Field>
+        </>
       )}
+
+      <Field
+        label="External RSVP URL"
+        hint="Optional. If the organizer handles registration on their own site, link it here — attendees register there, and members can still mark themselves interested."
+      >
+        <input
+          name="rsvp_url"
+          type="url"
+          defaultValue={event?.rsvp_url ?? ""}
+          placeholder="https://… (Eventbrite, Luma, their site, etc.)"
+          className={inputClass}
+        />
+      </Field>
 
       <Field label="Session type" hint="Shown on event cards.">
         <ChoiceChips
@@ -170,38 +228,13 @@ export function EventForm({
             { value: "Workshop", label: "Workshop" },
             { value: "Talk", label: "Talk" },
             { value: "Q&A", label: "Q&A" },
+            { value: "Conference", label: "Conference" },
             { value: "Social", label: "Social" },
           ]}
         />
       </Field>
 
-      <Field
-        label="Repeats"
-        hint="Recurring events repeat automatically in subscribers' calendars."
-      >
-        <ChoiceChips
-          name="recurrence"
-          defaultValue={event?.recurrence ?? "none"}
-          onChange={(v) => setRecurrence(v)}
-          options={[
-            { value: "none", label: "Never" },
-            { value: "weekly", label: "Weekly" },
-            { value: "biweekly", label: "Every 2 weeks" },
-            { value: "monthly", label: "Monthly" },
-            { value: "daily", label: "Daily" },
-          ]}
-        />
-      </Field>
-
-      {recurrence !== "none" && (
-        <Field label="Repeat until" hint="Leave blank to repeat indefinitely.">
-          <ComicDateTimePicker
-            name="recurrence_until"
-            dateOnly
-            defaultValue={event?.recurrence_until ?? undefined}
-          />
-        </Field>
-      )}
+      <RecurrenceEditor initial={recurrenceInitial} start={startDate} />
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Accent">
@@ -215,17 +248,33 @@ export function EventForm({
             ]}
           />
         </Field>
-        <Field label="Status" hint="Only published events are public.">
-          <ChoiceChips
-            name="status"
-            defaultValue={event?.status ?? "draft"}
-            options={[
-              { value: "draft", label: "Draft" },
-              { value: "published", label: "Published" },
-              { value: "cancelled", label: "Cancelled" },
-            ]}
-          />
-        </Field>
+        {canAdmin ? (
+          <Field label="Status" hint="Only published events are public.">
+            <ChoiceChips
+              name="status"
+              defaultValue={event?.status ?? "draft"}
+              options={[
+                { value: "draft", label: "Draft" },
+                { value: "published", label: "Published" },
+                { value: "cancelled", label: "Cancelled" },
+              ]}
+            />
+          </Field>
+        ) : mode === "edit" ? (
+          <Field label="Status" hint="Cancel if it's no longer happening.">
+            <ChoiceChips
+              name="status"
+              defaultValue={event?.status === "cancelled" ? "cancelled" : "published"}
+              options={[
+                { value: "published", label: "Published" },
+                { value: "cancelled", label: "Cancelled" },
+              ]}
+            />
+          </Field>
+        ) : (
+          // Members auto-publish on create.
+          <input type="hidden" name="status" value="published" />
+        )}
       </div>
 
       <div className="flex items-center gap-4">

@@ -27,6 +27,9 @@ export type EventRow = {
   timezone: string;
   location: string | null;
   url: string | null;
+  rsvp_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
   is_virtual: boolean;
   host: string | null;
   accent: EventAccent;
@@ -34,6 +37,9 @@ export type EventRow = {
   recurrence: RecurrenceFreq;
   recurrence_until: string | null;
   recurrence_exceptions: string[];
+  rrule: string | null;
+  recurrence_count: number | null;
+  recurrence_overrides: { date: string; starts_at: string }[];
   is_live: boolean;
   stream_embed_url: string | null;
   created_by: string | null;
@@ -45,7 +51,7 @@ export type EventRow = {
 };
 
 const EVENT_COLUMNS =
-  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, is_virtual, host, accent, status, recurrence, recurrence_until, recurrence_exceptions, is_live, stream_embed_url, created_by, created_at, updated_at";
+  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, rsvp_url, latitude, longitude, is_virtual, host, accent, status, recurrence, recurrence_until, recurrence_exceptions, rrule, recurrence_count, recurrence_overrides, is_live, stream_embed_url, created_by, created_at, updated_at";
 
 /** How many upcoming occurrences of each recurring series to surface. */
 const OCCURRENCES_AHEAD = 2;
@@ -98,6 +104,19 @@ export async function getEventBySlug(slug: string): Promise<EventRow | null> {
     .maybeSingle();
   if (error) throw error;
   return (data as EventRow) ?? null;
+}
+
+/** The organizer (creator) of an event, for attribution. */
+export async function getEventOrganizer(
+  userId: string,
+): Promise<{ username: string | null; display_name: string | null } | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("username, display_name")
+    .eq("id", userId)
+    .maybeSingle<{ username: string | null; display_name: string | null }>();
+  return data ?? null;
 }
 
 /** Published + cancelled events for the iCal feed (cancellations propagate). */
@@ -194,12 +213,16 @@ export function filterAdminEvents(
 
 export type RsvpSummary = { going: number; interested: number };
 
-export async function getRsvpSummary(eventId: string): Promise<RsvpSummary> {
+export async function getRsvpSummary(
+  eventId: string,
+  occurrenceStart: string,
+): Promise<RsvpSummary> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("rsvps")
     .select("status")
-    .eq("event_id", eventId);
+    .eq("event_id", eventId)
+    .eq("occurrence_start", occurrenceStart);
   if (error) throw error;
 
   const summary: RsvpSummary = { going: 0, interested: 0 };
@@ -230,6 +253,7 @@ type RawAttendee = {
 /** Members who RSVP'd, newest-joined last. Powers the "who's going" list. */
 export async function getAttendees(
   eventId: string,
+  occurrenceStart: string,
   opts?: { status?: RsvpStatus; limit?: number },
 ): Promise<Attendee[]> {
   const supabase = await createClient();
@@ -237,6 +261,7 @@ export async function getAttendees(
     .from("rsvps")
     .select("user_id, status, profiles ( username, display_name, avatar_url )")
     .eq("event_id", eventId)
+    .eq("occurrence_start", occurrenceStart)
     .order("created_at", { ascending: true });
 
   if (opts?.status) query = query.eq("status", opts.status);
@@ -286,31 +311,42 @@ export async function getUpcomingEventsForUser(
     .slice(0, limit);
 }
 
-/** The current user's RSVP status for many events at once, keyed by event id. */
+/** Stable map key for a specific occurrence's RSVP (instant-normalized). */
+export function rsvpKey(eventId: string, occurrenceStart: string): string {
+  return `${eventId}|${new Date(occurrenceStart).toISOString()}`;
+}
+
+/** The user's RSVP status for many (event, occurrence) pairs, keyed by rsvpKey. */
 export async function getUserRsvpMap(
   userId: string,
-  eventIds: string[],
+  occurrences: { eventId: string; occurrenceStart: string }[],
 ): Promise<Record<string, RsvpStatus>> {
-  if (eventIds.length === 0) return {};
+  if (occurrences.length === 0) return {};
+  const eventIds = [...new Set(occurrences.map((o) => o.eventId))];
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("rsvps")
-    .select("event_id, status")
+    .select("event_id, occurrence_start, status")
     .eq("user_id", userId)
     .in("event_id", eventIds);
   if (error) throw error;
 
   const map: Record<string, RsvpStatus> = {};
-  for (const row of (data ?? []) as { event_id: string; status: RsvpStatus }[]) {
-    map[row.event_id] = row.status;
+  for (const row of (data ?? []) as {
+    event_id: string;
+    occurrence_start: string;
+    status: RsvpStatus;
+  }[]) {
+    map[rsvpKey(row.event_id, row.occurrence_start)] = row.status;
   }
   return map;
 }
 
-/** The current user's RSVP status for an event, or null. */
+/** The current user's RSVP status for a specific occurrence, or null. */
 export async function getUserRsvp(
   eventId: string,
   userId: string,
+  occurrenceStart: string,
 ): Promise<RsvpStatus | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -318,6 +354,7 @@ export async function getUserRsvp(
     .select("status")
     .eq("event_id", eventId)
     .eq("user_id", userId)
+    .eq("occurrence_start", occurrenceStart)
     .maybeSingle();
   if (error) throw error;
   return (data?.status as RsvpStatus) ?? null;

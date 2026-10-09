@@ -9,6 +9,7 @@ import {
 } from "@/lib/tweets/actions";
 import { tweetLength, TWEET_MAX } from "@/lib/tweets/length";
 import { ComicButton } from "@/components/brand/comic-button";
+import { ComicSwitch } from "@/components/profile/comic-switch";
 import type { TweetRow, TweetAlternative } from "@/lib/tweets/queries";
 
 function KindTag({ kind }: { kind: string }) {
@@ -25,10 +26,14 @@ export function GenerateButton() {
     {},
   );
   return (
-    <form action={action} className="flex items-center gap-3">
+    <form action={action} className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <ComicButton variant="lime" type="submit" disabled={pending}>
         {pending ? "Drafting…" : "Generate drafts now"}
       </ComicButton>
+      <label className="flex items-center gap-2 text-sm text-brand-ink/70">
+        <ComicSwitch name="include_news" />
+        Include AI news (web search — costs more)
+      </label>
       {state.error && (
         <span className="text-sm text-brand-purple">{state.error}</span>
       )}
@@ -152,7 +157,7 @@ function TweetCard({ draft }: { draft: TweetRow }) {
           type="submit"
           className="focus-comic text-xs uppercase tracking-wide text-brand-ink/50 hover:text-brand-purple"
         >
-          Reject draft
+          Delete draft
         </button>
       </form>
     </li>

@@ -7,6 +7,7 @@ import { postTweet } from "@/lib/twitter/client";
 import { postSkeet } from "@/lib/bluesky/client";
 import { draftTweets } from "@/lib/tweets/pipeline";
 import { tweetLength, TWEET_MAX } from "@/lib/tweets/length";
+import type { TweetAlternative } from "@/lib/tweets/queries";
 
 export type TweetActionState = {
   ok?: boolean;
@@ -34,9 +35,15 @@ export async function approveAndPost(
   const db = createAdminClient();
   const { data: row } = await db
     .from("tweets")
-    .select("status")
+    .select("status, kind, body, source_url, alternatives")
     .eq("id", id)
-    .maybeSingle<{ status: string }>();
+    .maybeSingle<{
+      status: string;
+      kind: string;
+      body: string;
+      source_url: string | null;
+      alternatives: TweetAlternative[];
+    }>();
   if (!row) return { error: "Draft not found." };
   if (row.status === "posted") return { error: "Already posted." };
 
@@ -62,6 +69,26 @@ export async function approveAndPost(
     .eq("id", id);
   if (error) return { error: error.message };
 
+  // Keep the un-posted options as their own drafts, so "post one, the rest
+  // wait in drafts" works. Exclude whichever option was actually posted.
+  const postedBody = body.trim();
+  const leftover = [
+    { kind: row.kind, body: row.body, source_url: row.source_url, rationale: null },
+    ...(row.alternatives ?? []),
+  ].filter((o) => (o.body ?? "").trim().length > 0 && o.body.trim() !== postedBody);
+  if (leftover.length > 0) {
+    await db.from("tweets").insert(
+      leftover.map((o) => ({
+        status: "draft",
+        kind: o.kind,
+        body: o.body,
+        source_url: o.source_url ?? null,
+        rationale: o.rationale ?? null,
+        alternatives: [],
+      })),
+    );
+  }
+
   // Surface a partial failure (one platform down) without blocking success.
   let warning: string | undefined;
   if (!x.ok) warning = `Posted to Bluesky only — X failed: ${x.error}`;
@@ -86,11 +113,14 @@ export async function rejectTweet(formData: FormData): Promise<void> {
   revalidatePath("/admin/tweets");
 }
 
-/** Run a draft cycle on demand (same pipeline the daily cron uses). */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function generateNow(_prev: TweetActionState, _formData: FormData): Promise<TweetActionState> {
+/** Run a draft cycle on demand. News (web search) is opt-in via the checkbox. */
+export async function generateNow(
+  _prev: TweetActionState,
+  formData: FormData,
+): Promise<TweetActionState> {
   await requireAdmin();
-  const result = await draftTweets();
+  const includeNews = formData.get("include_news") === "on";
+  const result = await draftTweets({ includeNews });
   revalidatePath("/admin/tweets");
   if (!result.ok) return { error: result.error };
   return { ok: true };

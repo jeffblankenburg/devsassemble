@@ -15,7 +15,7 @@ import type { EventRow } from "@/lib/events/queries";
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 
 const EVENT_COLUMNS =
-  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, is_virtual, host, accent, status, recurrence, recurrence_until, recurrence_exceptions, is_live, stream_embed_url, created_by, created_at, updated_at";
+  "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, is_virtual, host, accent, status, recurrence, recurrence_until, recurrence_exceptions, rrule, recurrence_count, recurrence_overrides, is_live, stream_embed_url, created_by, created_at, updated_at";
 
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -49,19 +49,21 @@ export async function GET(request: Request) {
     });
     if (occurrences.length === 0) continue;
 
-    const { data: rsvps } = await admin
-      .from("rsvps")
-      .select("user_id")
-      .eq("event_id", event.id)
-      .eq("status", "going");
-    const userIds = (rsvps ?? []).map((r) => (r as { user_id: string }).user_id);
-    if (userIds.length === 0) continue;
-
     const locationLabel = event.is_virtual
       ? "Online"
       : (event.location ?? null);
 
     for (const occ of occurrences) {
+      // RSVPs are per-occurrence — remind only those going to THIS date.
+      const { data: rsvps } = await admin
+        .from("rsvps")
+        .select("user_id")
+        .eq("event_id", event.id)
+        .eq("occurrence_start", occ.starts_at)
+        .eq("status", "going");
+      const userIds = (rsvps ?? []).map((r) => (r as { user_id: string }).user_id);
+      if (userIds.length === 0) continue;
+
       const whenLabel = `${formatFullDate(occ.starts_at, event.timezone)} at ${formatTime(
         occ.starts_at,
         event.timezone,

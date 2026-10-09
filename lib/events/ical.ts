@@ -25,14 +25,6 @@ function fold(line: string): string {
   return parts.join("\r\n");
 }
 
-const RRULE: Record<string, string | null> = {
-  none: null,
-  daily: "FREQ=DAILY",
-  weekly: "FREQ=WEEKLY",
-  biweekly: "FREQ=WEEKLY;INTERVAL=2",
-  monthly: "FREQ=MONTHLY",
-};
-
 export function buildVEvent(
   event: EventRow,
   siteUrl: string,
@@ -43,11 +35,15 @@ export function buildVEvent(
   const description = [event.summary ?? event.description ?? "", url]
     .filter(Boolean)
     .join("\n\n");
-  const rrule = RRULE[event.recurrence] ?? null;
-  const until =
-    rrule && event.recurrence_until
-      ? `;UNTIL=${event.recurrence_until.replace(/-/g, "")}T235959Z`
-      : "";
+  // The stored RRULE body is the pattern only; append the end (COUNT or UNTIL).
+  const rrule = event.rrule;
+  const end = !rrule
+    ? ""
+    : event.recurrence_count
+      ? `;COUNT=${event.recurrence_count}`
+      : event.recurrence_until
+        ? `;UNTIL=${event.recurrence_until.replace(/-/g, "")}T235959Z`
+        : "";
 
   // Skipped occurrences: exclude each cancelled date at the series' local time.
   const timeOfDay = toZonedStamp(event.starts_at, tz).slice(9); // "HHMMSS"
@@ -66,7 +62,7 @@ export function buildVEvent(
     ...(event.ends_at
       ? [`DTEND;TZID=${tz}:${toZonedStamp(event.ends_at, tz)}`]
       : []),
-    ...(rrule ? [`RRULE:${rrule}${until}`] : []),
+    ...(rrule ? [`RRULE:${rrule}${end}`] : []),
     ...exdates,
     `SUMMARY:${escapeText(event.title)}`,
     `DESCRIPTION:${escapeText(description)}`,
@@ -77,7 +73,39 @@ export function buildVEvent(
     `STATUS:${event.status === "cancelled" ? "CANCELLED" : "CONFIRMED"}`,
     "END:VEVENT",
   ];
-  return lines.map(fold).join("\r\n");
+
+  const commonLines = [
+    `SUMMARY:${escapeText(event.title)}`,
+    `DESCRIPTION:${escapeText(description)}`,
+    `URL:${escapeText(url)}`,
+    `LOCATION:${escapeText(event.location ?? (event.is_virtual ? "Virtual" : ""))}`,
+    `STATUS:${event.status === "cancelled" ? "CANCELLED" : "CONFIRMED"}`,
+  ];
+
+  // Moved occurrences: a RECURRENCE-ID override VEVENT replaces the generated
+  // instance at `date` with the new start (duration preserved).
+  const durationMs = event.ends_at
+    ? new Date(event.ends_at).getTime() - new Date(event.starts_at).getTime()
+    : null;
+  const overrides = (rrule ? event.recurrence_overrides : []).map((o) => {
+    const newEndIso =
+      durationMs != null
+        ? new Date(new Date(o.starts_at).getTime() + durationMs).toISOString()
+        : null;
+    const oLines = [
+      "BEGIN:VEVENT",
+      `UID:${event.id}@devsassemble.ai`,
+      `DTSTAMP:${utcStamp(now)}`,
+      `RECURRENCE-ID;TZID=${tz}:${o.date.replace(/-/g, "")}T${timeOfDay}`,
+      `DTSTART;TZID=${tz}:${toZonedStamp(o.starts_at, tz)}`,
+      ...(newEndIso ? [`DTEND;TZID=${tz}:${toZonedStamp(newEndIso, tz)}`] : []),
+      ...commonLines,
+      "END:VEVENT",
+    ];
+    return oLines.map(fold).join("\r\n");
+  });
+
+  return [lines.map(fold).join("\r\n"), ...overrides].join("\r\n");
 }
 
 export function buildCalendar(

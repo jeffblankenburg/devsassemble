@@ -1,17 +1,26 @@
 import type { EventRow } from "@/lib/events/queries";
 import { listOccurrenceSlots } from "@/lib/events/recurrence";
-import { formatFullDate, formatTime, tzLabel } from "@/lib/events/format";
-import { skipOccurrence, restoreOccurrence } from "@/lib/events/actions";
+import {
+  formatFullDate,
+  formatTime,
+  tzLabel,
+  toDatetimeLocalValue,
+} from "@/lib/events/format";
+import { OccurrenceRow } from "@/components/admin/occurrence-row";
 
 /**
- * Admin control for cancelling a single occurrence of a recurring event. Lists
- * the upcoming dates; each can be skipped (shown "Cancelled" on the site and
- * dropped from calendars via EXDATE) or restored.
+ * Admin control for a recurring series' individual occurrences. Each upcoming
+ * date can be cancelled (EXDATE), restored, or moved to a different date/time
+ * (a RECURRENCE-ID override) — e.g. shift the pre-holiday meetup a week earlier.
  */
 export function OccurrenceManager({ event }: { event: EventRow }) {
-  if (event.recurrence === "none") return null;
+  if (!event.rrule) return null;
 
+  const tz = event.timezone;
   const slots = listOccurrenceSlots(event, new Date(), 10);
+
+  const label = (iso: string) =>
+    `${formatFullDate(iso, tz)} · ${formatTime(iso, tz)} ${tzLabel(tz)}`;
 
   return (
     <section className="mt-8 rounded-[var(--radius-comic)] border-ink bg-surface p-6 shadow-comic">
@@ -19,8 +28,8 @@ export function OccurrenceManager({ event }: { event: EventRow }) {
         Upcoming occurrences
       </h2>
       <p className="mt-1 text-sm text-brand-ink/70">
-        Cancel a single date (e.g. a holiday). It shows as cancelled on the site
-        and drops from subscribed calendars.
+        Cancel a single date (e.g. a holiday), or move one to a different time —
+        the rest of the series is unchanged. Both sync to subscribed calendars.
       </p>
 
       {slots.length === 0 ? (
@@ -30,33 +39,15 @@ export function OccurrenceManager({ event }: { event: EventRow }) {
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
           {slots.map((slot) => (
-            <li
+            <OccurrenceRow
               key={slot.date}
-              className="flex items-center justify-between gap-3 rounded-md border-[2px] border-brand-ink bg-brand-cream px-3 py-2"
-            >
-              <span
-                className={`font-mono text-sm text-brand-ink ${
-                  slot.cancelled ? "text-brand-ink/50 line-through" : ""
-                }`}
-              >
-                {formatFullDate(slot.iso, event.timezone)} ·{" "}
-                {formatTime(slot.iso, event.timezone)} {tzLabel(event.timezone)}
-              </span>
-              <form action={slot.cancelled ? restoreOccurrence : skipOccurrence}>
-                <input type="hidden" name="id" value={event.id} />
-                <input type="hidden" name="date" value={slot.date} />
-                <button
-                  type="submit"
-                  className={`focus-comic shrink-0 rounded-md border-[2px] border-brand-ink px-3 py-1 font-display text-xs uppercase shadow-comic-sm ${
-                    slot.cancelled
-                      ? "bg-brand-lime text-brand-ink"
-                      : "bg-surface text-brand-ink hover:bg-brand-purple hover:text-white"
-                  }`}
-                >
-                  {slot.cancelled ? "Restore" : "Cancel this one"}
-                </button>
-              </form>
-            </li>
+              eventId={event.id}
+              date={slot.date}
+              origLabel={label(slot.iso)}
+              movedLabel={slot.movedToIso ? label(slot.movedToIso) : null}
+              cancelled={slot.cancelled}
+              moveDefault={toDatetimeLocalValue(slot.movedToIso ?? slot.iso, tz)}
+            />
           ))}
         </ul>
       )}

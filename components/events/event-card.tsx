@@ -75,6 +75,7 @@ export function EventCard({
             <QuickRsvp
               eventId={event.id}
               slug={event.slug}
+              occurrenceStart={event.starts_at}
               currentStatus={rsvp.currentStatus}
               isAuthed={rsvp.isAuthed}
               loginHref={rsvp.loginHref}

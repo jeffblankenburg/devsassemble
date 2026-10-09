@@ -13,14 +13,21 @@ export type DraftResult =
   | { ok: false; error: string };
 
 /**
- * One draft cycle: gather the week's community material, pull a best-effort news
- * digest, ask Claude for 2-3 options, and store them as a single `draft` row
- * (top option as the body, the rest as alternatives). Shared by the daily cron
- * and the "Generate now" admin button. Never posts — approval happens in the UI.
+ * One draft cycle: gather the week's community material, optionally pull a
+ * news digest, ask Claude for 2-3 options, and store them as a single `draft`
+ * row (top option as the body, the rest as alternatives). Shared by the daily
+ * cron and the "Generate now" admin button. Never posts — approval is in the UI.
+ *
+ * News (`includeNews`) is off by default: it runs a web-search round-trip that
+ * ingests page content and is the main cost driver, so it's opt-in per run.
  */
-export async function draftTweets(now = new Date()): Promise<DraftResult> {
+export async function draftTweets(opts?: {
+  includeNews?: boolean;
+  now?: Date;
+}): Promise<DraftResult> {
+  const now = opts?.now ?? new Date();
   const material = await gatherTweetMaterial(now);
-  const news = await fetchAiNewsDigest();
+  const news = opts?.includeNews ? await fetchAiNewsDigest() : null;
 
   let options: TweetOption[] = [];
   try {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 
@@ -64,10 +64,12 @@ export function ComicDateTimePicker({
   name,
   defaultValue,
   dateOnly,
+  onChange,
 }: {
   name: string;
   defaultValue?: string;
   dateOnly?: boolean;
+  onChange?: (value: string) => void;
 }) {
   const [init] = useState(() => parseValue(defaultValue));
   const [date, setDate] = useState<Date | undefined>(init.date);
@@ -84,6 +86,10 @@ export function ComicDateTimePicker({
       ? ymd(date)
       : `${ymd(date)}T${pad(h24)}:${pad(minute)}`
     : "";
+
+  useEffect(() => {
+    onChange?.(value);
+  }, [value, onChange]);
 
   return (
     <div className="rounded-[var(--radius-comic)] border-ink bg-white p-3 shadow-comic-sm">
