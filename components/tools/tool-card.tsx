@@ -28,10 +28,7 @@ export function ToolCard({
   const { host, favicon } = hostAndFavicon(tool.url);
 
   return (
-    <article
-      id={`tool-${tool.id}`}
-      className="flex scroll-mt-28 flex-col rounded-[var(--radius-comic)] border-ink bg-surface p-5 shadow-comic target:ring-4 target:ring-brand-blue target:ring-offset-4 target:ring-offset-brand-cream"
-    >
+    <article className="flex flex-col rounded-[var(--radius-comic)] border-ink bg-surface p-5 shadow-comic">
       <div className="flex items-start gap-3">
         {favicon ? (
           <Image

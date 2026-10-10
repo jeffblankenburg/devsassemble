@@ -88,11 +88,11 @@ export async function gatherTweetMaterial(now = new Date()): Promise<TweetMateri
     owner: string;
     name: string;
     description: string | null;
-  }[]).filter((r) => !isCovered(`${SITE_URL}/projects#project-${r.id}`));
+  }[]).filter((r) => !isCovered(`${SITE_URL}/projects/${r.id}`));
   if (freshRepos.length) {
-    lines.push("\nNEW PROJECTS (link each to its spotlight on our site):");
+    lines.push("\nNEW PROJECTS (link each to its page on our site):");
     for (const r of freshRepos) {
-      lines.push(`- ${r.owner}/${r.name}${r.description ? ` — ${r.description}` : ""} — ${SITE_URL}/projects#project-${r.id}`);
+      lines.push(`- ${r.owner}/${r.name}${r.description ? ` — ${r.description}` : ""} — ${SITE_URL}/projects/${r.id}`);
     }
   }
 
@@ -108,11 +108,11 @@ export async function gatherTweetMaterial(now = new Date()): Promise<TweetMateri
     name: string;
     description: string | null;
     category: string;
-  }[]).filter((t) => !isCovered(`${SITE_URL}/tools#tool-${t.id}`));
+  }[]).filter((t) => !isCovered(`${SITE_URL}/tools/${t.id}`));
   if (freshTools.length) {
-    lines.push("\nNEW TOOLS (link each to its spotlight on our site):");
+    lines.push("\nNEW TOOLS (link each to its page on our site):");
     for (const t of freshTools) {
-      lines.push(`- ${t.name}${t.description ? ` — ${t.description}` : ""} — ${SITE_URL}/tools#tool-${t.id}`);
+      lines.push(`- ${t.name}${t.description ? ` — ${t.description}` : ""} — ${SITE_URL}/tools/${t.id}`);
     }
   }
 

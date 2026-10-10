@@ -20,10 +20,7 @@ export function RepoCard({
     : null;
 
   return (
-    <article
-      id={`project-${repo.id}`}
-      className="flex scroll-mt-28 flex-col rounded-[var(--radius-comic)] border-ink bg-surface p-5 shadow-comic target:ring-4 target:ring-brand-blue target:ring-offset-4 target:ring-offset-brand-cream"
-    >
+    <article className="flex flex-col rounded-[var(--radius-comic)] border-ink bg-surface p-5 shadow-comic">
       <div className="flex items-start gap-3">
         {repo.owner_avatar_url ? (
           <Image

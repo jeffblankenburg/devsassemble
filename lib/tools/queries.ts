@@ -92,6 +92,36 @@ export async function listTools(opts?: {
   return result;
 }
 
+/** A single tool by id, with reaction aggregates. Public read; null if absent. */
+export async function getTool(id: string): Promise<ToolItem | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data, error } = await supabase
+    .from("tools")
+    .select(TOOL_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const tool = data as unknown as ToolBase;
+
+  const { data: reactionRows } = await supabase
+    .from("tool_reactions")
+    .select("emoji, user_id")
+    .eq("tool_id", id);
+  const counts: Record<string, number> = {};
+  const mine: string[] = [];
+  for (const row of (reactionRows ?? []) as { emoji: string; user_id: string }[]) {
+    counts[row.emoji] = (counts[row.emoji] ?? 0) + 1;
+    if (user && row.user_id === user.id) mine.push(row.emoji);
+  }
+  const reactionCount = Object.values(counts).reduce((a, b) => a + b, 0);
+  return { ...tool, reactions: counts, reactionCount, myReactions: mine };
+}
+
 export type RecentTool = {
   id: string;
   name: string;
