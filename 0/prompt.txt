@@ -267,3 +267,8 @@ http://localhost:3005/events/momentum-dev-con
 The /admin/tweets page is also way too much.  I literally want a concise, lean list of tweets with labels like news, events, project, etc.  I don't want "other options".  Those are just other tweets in the list. On each one, I want a "configure" button that launches a modal that shows the text in editable form, and has the scheduling options.
 
 I don't see any tweets based on the data we are harvesting from Reddit yet, and they don't seem to generate.
+
+---
+
+1 yes
+2 yes
