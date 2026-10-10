@@ -86,7 +86,7 @@ async function fetchIngested(): Promise<NewsItem[]> {
 }
 
 /** Top dev/AI items across HN, Dev.to, and IFTTT-ingested sources (e.g. Reddit). */
-export async function fetchDevNews(limit = 15): Promise<NewsItem[]> {
+export async function fetchDevNews(limit = 24): Promise<NewsItem[]> {
   const batches = await Promise.all([
     fetchHackerNews(),
     fetchDevTo(),
@@ -102,14 +102,15 @@ export async function fetchDevNews(limit = 15): Promise<NewsItem[]> {
     return true;
   });
 
-  // Guarantee ingested (score-less) items a slot — don't let points-sorted
-  // HN/Dev.to crowd them out entirely.
-  const ingested = deduped.filter((i) => i.score === 0).slice(0, 8);
+  // The ingested items (Reddit via IFTTT) are our freshest, most on-topic
+  // community signal, so give them the lion's share of the budget and list
+  // them FIRST — don't let points-sorted HN/Dev.to crowd them out.
+  const ingested = deduped.filter((i) => i.score === 0).slice(0, 16);
   const scored = deduped
     .filter((i) => i.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, Math.max(0, limit - ingested.length));
-  return [...scored, ...ingested];
+  return [...ingested, ...scored];
 }
 
 /** Format news items as prompt text. */

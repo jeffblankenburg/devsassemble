@@ -105,14 +105,16 @@ export async function generateTweetOptions(
     material || "(quiet day — lean on an evergreen angle)",
     "",
     newsDigest
-      ? `Top items right now from Hacker News, Reddit, and Dev.to — react to one if it's genuinely interesting to AI builders, and link the source URL exactly as given:\n${newsDigest}\n`
+      ? `Fresh items right now from Reddit (vibe-coding / AI-dev communities), Hacker News, and Dev.to. The Reddit items are listed first and are our most on-topic, timely signal — lean into them. Link each source URL EXACTLY as given:\n${newsDigest}\n`
       : "",
-    "Write 2-3 distinct tweet options for today. Mix angles: a community item (an upcoming event, a fresh project/tool, an active discussion) AND, when the news above is interesting, a take on one dev/AI story. Favor timely, specific posts over generic ones. Each must follow every rule in your instructions.",
+    newsDigest
+      ? "Write 4-6 distinct tweet options for today. Weight them toward the news above: at least 3 should react to specific items (favor the Reddit community posts) with your own builder's-eye take — a reaction, a question, a hot take — not just a restated headline, and link the source. 1-2 should spotlight DevsAssemble community activity (an upcoming event, a fresh project/tool, an active discussion) with a devsassemble.ai link. Optionally one evergreen. Favor timely, specific posts over generic ones; each must follow every rule in your instructions."
+      : "Write 2-3 distinct tweet options for today drawn from the DevsAssemble community activity (an upcoming event, a fresh project/tool, an active discussion), plus optionally one evergreen. Favor timely, specific posts over generic ones. Each must follow every rule in your instructions.",
   ].join("\n");
 
   const res = await client.messages.create({
     model: MODEL,
-    max_tokens: 2000,
+    max_tokens: 3000,
     system: SYSTEM,
     output_config: { format: { type: "json_schema", schema: SCHEMA } },
     messages: [{ role: "user", content: prompt }],

@@ -106,16 +106,27 @@ function TweetRowItem({
   );
 }
 
+// Quick relative-schedule steps, anchored to the latest scheduled tweet.
+const QUICK_STEPS = [
+  { label: "1h", hours: 1 },
+  { label: "3h", hours: 3 },
+  { label: "1 day", hours: 24 },
+];
+
 function ConfigureModal({
   tweet,
+  latestScheduledMs,
   onClose,
 }: {
   tweet: TweetRow;
+  latestScheduledMs: number | null;
   onClose: () => void;
 }) {
   const [body, setBody] = useState(tweet.body);
   const [schedLocal, setSchedLocal] = useState(toLocalInput(tweet.scheduled_for));
+  const [quickError, setQuickError] = useState<string | null>(null);
   const [deleting, startDelete] = useTransition();
+  const [quickScheduling, startQuick] = useTransition();
 
   const [postState, postAction, posting] = useActionState<
     TweetActionState,
@@ -129,6 +140,24 @@ function ConfigureModal({
   const len = tweetLength(body);
   const over = len > TWEET_MAX;
   const empty = body.trim().length === 0;
+
+  // "Now" captured once when the modal opens (Date.now() can't run during render).
+  const [openedAtMs] = useState(() => Date.now());
+  const hasLatest = (latestScheduledMs ?? 0) > openedAtMs;
+
+  function scheduleAt(when: Date) {
+    setQuickError(null);
+    startQuick(async () => {
+      const fd = new FormData();
+      fd.set("id", tweet.id);
+      fd.set("source_url", tweet.source_url ?? "");
+      fd.set("body", body);
+      fd.set("scheduled_for", when.toISOString());
+      const res = await scheduleTweet({}, fd);
+      if (res.ok) onClose();
+      else setQuickError(res.error ?? "Could not schedule.");
+    });
+  }
 
   // Close once an action lands — the page revalidates and the list refreshes.
   useEffect(() => {
@@ -153,7 +182,7 @@ function ConfigureModal({
     });
   }
 
-  const busy = posting || scheduling || deleting;
+  const busy = posting || scheduling || deleting || quickScheduling;
 
   return (
     <div
@@ -202,9 +231,33 @@ function ConfigureModal({
 
         <div className="mt-4">
           <p className="font-display text-xs uppercase tracking-wide text-brand-ink/50">
-            Schedule for
+            Schedule
           </p>
-          <div className="mt-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-brand-ink/60">
+              {hasLatest ? "After the last scheduled one:" : "From now:"}
+            </span>
+            {QUICK_STEPS.map((s) => (
+              <button
+                key={s.label}
+                type="button"
+                disabled={busy || over || empty}
+                onClick={() =>
+                  scheduleAt(
+                    new Date(
+                      Math.max(latestScheduledMs ?? 0, Date.now()) +
+                        s.hours * 3_600_000,
+                    ),
+                  )
+                }
+                className="focus-comic rounded-md border-[2px] border-brand-ink bg-white px-3 py-1 font-display text-xs uppercase tracking-wide text-brand-ink shadow-comic-sm transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+              >
+                +{s.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-brand-ink/50">…or pick an exact time:</p>
+          <div className="mt-1">
             <ComicDateTimePicker
               name="_sched"
               defaultValue={toLocalInput(tweet.scheduled_for)}
@@ -259,9 +312,9 @@ function ConfigureModal({
           </button>
         </div>
 
-        {(postState.error || schedState.error) && (
+        {(postState.error || schedState.error || quickError) && (
           <p className="mt-3 text-sm text-brand-purple">
-            {postState.error || schedState.error}
+            {postState.error || schedState.error || quickError}
           </p>
         )}
       </div>
@@ -283,6 +336,12 @@ export function TweetConsole({
   const [active, setActive] = useState<TweetRow | null>(null);
   // Scheduled first (time-sensitive), then drafts.
   const rows = [...scheduled, ...drafts];
+  // Latest future schedule time — the anchor for "+1h / +3h after the last one".
+  const latestScheduledMs =
+    scheduled.reduce((max, t) => {
+      const ms = t.scheduled_for ? new Date(t.scheduled_for).getTime() : 0;
+      return ms > max ? ms : max;
+    }, 0) || null;
 
   if (rows.length === 0) {
     return (
@@ -303,6 +362,7 @@ export function TweetConsole({
         <ConfigureModal
           key={active.id}
           tweet={active}
+          latestScheduledMs={latestScheduledMs}
           onClose={() => setActive(null)}
         />
       )}
