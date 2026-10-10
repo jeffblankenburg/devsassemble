@@ -40,19 +40,13 @@ export function GenerateButton() {
     {},
   );
   return (
-    <form action={action} className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <ComicButton variant="lime" type="submit" disabled={pending}>
-        {pending ? "Drafting…" : "Generate drafts now"}
-      </ComicButton>
-      <span className="text-sm text-brand-ink/60">
-        Pulls in community activity + dev news (HN, Dev.to, Reddit).
-      </span>
+    <form action={action} className="flex items-center gap-3">
       {state.error && (
         <span className="text-sm text-brand-purple">{state.error}</span>
       )}
-      {state.ok && (
-        <span className="text-sm text-brand-ink/60">Drafts added below.</span>
-      )}
+      <ComicButton variant="lime" type="submit" disabled={pending}>
+        {pending ? "Drafting…" : "Generate drafts now"}
+      </ComicButton>
     </form>
   );
 }
@@ -453,10 +447,7 @@ export function TweetConsole({
         </button>
       </div>
       {drafts.length === 0 ? (
-        <p className="mt-4 text-brand-ink/70">
-          No drafts waiting. Write one, hit “Generate drafts now,” or wait for
-          the daily run.
-        </p>
+        <p className="mt-4 text-sm text-brand-ink/55">No drafts right now.</p>
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
           {drafts.map((t) => (

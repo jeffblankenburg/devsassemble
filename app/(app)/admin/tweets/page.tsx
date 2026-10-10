@@ -23,32 +23,10 @@ export default async function AdminTweetsPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
-      <h1 className="font-display text-5xl uppercase tracking-wide text-brand-ink">
-        Tweets
-      </h1>
-      <p className="mt-2 text-brand-ink/70">
-        Review daily drafts, edit, and cross-post to{" "}
-        <a
-          href="https://x.com/devsassembleAI"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="focus-comic text-brand-blue underline"
-        >
-          X
-        </a>{" "}
-        and{" "}
-        <a
-          href="https://bsky.app/profile/devsassemble.ai"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="focus-comic text-brand-blue underline"
-        >
-          Bluesky
-        </a>
-        . Nothing goes out without your approval.
-      </p>
-
-      <div className="mt-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-5xl uppercase tracking-wide text-brand-ink">
+          Tweets
+        </h1>
         <GenerateButton />
       </div>
 
