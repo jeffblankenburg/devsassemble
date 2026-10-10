@@ -240,13 +240,17 @@ function ConfigureModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/40 p-4"
-      onClick={onClose}
+      // Close only on a genuine backdrop click. Using the target===currentTarget
+      // check (not stopPropagation) keeps the modal open when an inner element
+      // unmounts mid-click — e.g. picking a day collapses the calendar.
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={compose ? "Write a tweet" : "Configure tweet"}
-        onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg rounded-[var(--radius-comic)] border-ink bg-brand-cream p-5 shadow-comic"
       >
         <div className="flex items-center gap-2">
