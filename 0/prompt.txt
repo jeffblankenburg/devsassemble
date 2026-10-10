@@ -1,0 +1,336 @@
+thinking about the discussion forums...can folks share images?
+
+---
+
+yeah build it, but handle the abandonment too
+
+---
+
+sure
+
+---
+
+added cron secret
+
+---
+
+You're importing a module that depends on "server-only". This API is only available in Server Components in the App Router, but you are using it in the Pages Router.
+./lib/forum/images.ts (1:1)
+
+Error: You're importing a module that depends on "server-only". This API is only available in Server Components in the App Router, but you are using it in the Pages Router.
+    Learn more: https://nextjs.org/docs/app/building-your-application/rendering/server-components
+> 1 | import "server-only";
+    | ^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | import type { SupabaseClient } from "@supabase/supabase-js";
+  4 |
+
+Ecmascript file had an error
+
+Import traces:
+  #1 [Server Component]:
+    ./lib/forum/images.ts
+    ./lib/forum/upload.ts
+
+  #2 [Server Component]:
+    ./lib/forum/images.ts
+    ./lib/forum/actions.ts
+    ./app/discussions/[slug]/page.tsx
+
+  #3 [Client Component Browser]:
+    ./lib/forum/images.ts [Client Component Browser]
+    ./components/forum/image-upload-button.tsx [Client Component Browser]
+    ./components/forum/reply-form.tsx [Client Component Browser]
+    ./components/forum/reply-form.tsx [Server Component]
+    ./app/discussions/[slug]/page.tsx [Server Component]
+
+  #4 [Client Component SSR]:
+    ./lib/forum/images.ts [Cli
+
+---
+
+Muxh like the golfapalooza article editor, can we offer markdown buttons for other edits including images? https://github.com/jeffblankenburg/golfapalooza.golf
+
+---
+
+don't love this layout.  can the buttons be embedded in the box, like the golfapalooza article editor? [Image #1]
+
+---
+
+why no h1?
+
+---
+
+no
+
+---
+
+Upload failed — try again.
+
+---
+
+preview mode?
+
+---
+
+Let’s think about what we need to email to users.  Alerts, updates, etc
+
+---
+
+dns check is good
+
+---
+
+yeah add the test route
+
+---
+
+Cloudflare says my mail forwarding catchall is working, and even has a record of a message I sent being forwarded to my gmail account.  But the message never arrived.
+
+---
+
+What do I need to do to set up sending from jeff@devsassemble.ai?
+
+---
+
+NO, I just want to set this up in my Gmail.
+
+---
+
+Authentication error. Check your username and password.
+Server returned error: "535 5.7.8 Authentication failed: use 'api_token' as username , code: 535"
+
+---
+
+Authentication error. Check your username and password.
+Server returned error: "535 5.7.8 Authentication credentials invalid , code: 535"
+
+---
+
+Email works now.
+
+Created @devsassembleAI on Twitter.  Let’s add it to the site, and come up with an automated process for creating useful interesting tweets each day.
+
+---
+
+If we can fit under a Claude free tier, I’ll take it
+
+---
+
+Anthropic API key is there now, what do you need for Twitter?
+
+---
+
+When you need env vars, can you add them to env.local so I can fill them in?
+
+---
+
+I think I've got them in there now.
+
+---
+
+try again with 1.0
+
+---
+
+Trying to do this for Bluesky. Can you create this? [Image #2]
+
+---
+
+Walk me through making this possible for Bluesky as well.
+
+---
+
+I filled in the Bluesky creds, verify them
+
+---
+
+saved
+
+---
+
+I generated some messages. It cost about 42 cents.  I chose the default one, but liked the others.  After I published the default one, I expected the others to be saved in drafts, but they are gone.  Did we save them and not show them?  Or are they just gone?
+
+---
+
+yes.  will drafts be deletable?
+
+---
+
+News should be optional, yes.
+
+---
+
+Do we have a way, with events, to schedule something repeating "every 4th Wednesday of the month?"
+
+---
+
+If we can, I'd really like our scheduling options to be as robust as Outlook or Google calendar.
+
+---
+
+polish.  can we allow the edit of a singular upcoming occurrence?  For example, there's one currently scheduled for two days before Christmas. They might cancel it, but they might also just want to move it a week earlier or later.
+
+---
+
+Love it. A few more notes about Events.
+
+1. I think we need to let event organizers create their own entries.  Not sure if I need/want to moderate this.
+2. Organizers might have their own website to manage RSVPs, speaker details, etc.  We should provide a way to include a URL instead of using our native RSVP system.  (People can still say they're interested.)
+3. On this page (http://localhost:3005/events/ai-augmented-engineers-cincinnati), the address should be clickable to a map on both mobile and web.
+4. Help me understand what the "summary" is for an event.  Is that per occurrence, or just for the entire event collection?
+
+---
+
+OK, this changes some things:
+
+1. The header on /events says "upcoming livestreams".  This needs to be "upcoming events" now.
+2. The "submit an event" button feels oddly placed. [Image #3]  Maybe make it parallel to the "assemble every week" header?
+3. RSVPs seem to be for the entire collection of events, not individual.  So if I reply to a recurring event, it makes all of them marked as "going."  This needs to be granular.
+4. We need a new session type that is "conference". For these, we kinda need both a location address and a web address.  We're not trying to be the source of truth for other folks' events.
+5. If I provide a web address for an in-person event, like a conference, it shouldn't link to maps.
+
+---
+
+The /events page needs some filtering now.  One for virtual/in-person.  For in-person, "near me" meaning 100 miles?  With location approval of course?
+
+---
+
+On the home page, the calendar card should have all of the details.  At a minimum, city/state, event type. [Image #4]
+
+---
+
+OK. I just found out that I have $100 recurring dollars a month for the Claude API. I think that we should be able to grab some interesting news and articles from REddit/Hackernews/DevTo, and write some tweets about them.  I'd also like the option to schedule tweets, so I'm not at the mercy of my availablity to publish.
+
+---
+
+Creating the Reddit credentials, and it's asking for our About page URL. Can you create one?  It's already listed in our footer.
+
+---
+
+[Image #5]
+
+---
+
+It is showing this like an error when I try to create:
+
+In order to create an application or use our API you can read our full policies here: https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy
+
+---
+
+Feels like they are making this very complicated.  I seem to already have an IFTTT integration, could we use that somehow?
+
+---
+
+what are the top ten subreddits you would recommend?
+
+---
+
+this is mostly around AI augmented software development.  Vibe coding.
+
+---
+
+Is there a way to duplicate an IFTTT applet?  Or do I have to create each one from scratch for each subreddit?
+
+---
+
+Has anything hit that endpoint yet?
+
+---
+
+deploy
+
+---
+
+anything yet?
+
+---
+
+I don't see a check now button
+
+---
+
+[Image #6]
+
+---
+
+Checking our data again
+
+---
+
+When creating URLs for tweets, we can't ever use the localhost URL. Always the prod URL, devsassemble.ai. Momentum Dev Con is on the calendar — Oct 15, 2026 at 7:30 AM ET. Mark it. 🗓
+
+http://localhost:3005/events/momentum-dev-con
+
+---
+
+The /admin/tweets page is also way too much.  I literally want a concise, lean list of tweets with labels like news, events, project, etc.  I don't want "other options".  Those are just other tweets in the list. On each one, I want a "configure" button that launches a modal that shows the text in editable form, and has the scheduling options.
+
+I don't see any tweets based on the data we are harvesting from Reddit yet, and they don't seem to generate.
+
+---
+
+1 yes
+2 yes
+
+---
+
+The scheduling is almost too granular.  I want the ability to say "an hour later than the latest one" or "3 hours later".
+
+Also, I hit generate, and got three drafts, two of which were from the site's data.  Where's all of the reddit data?
+
+---
+
+drafts need a delete button. also, if I have already tweeted about Momentum Dev Con (some of the website data), we shouldn't continue to make drafts for it.  It might also be nice to have a way to write a new tweet on this page as well for when an admin is feeling creative.
+
+---
+
+nah
+
+---
+
+what do you mean?
+
+---
+
+that was the tweet copy
+
+---
+
+selecting a time in the future should't close the modal
+
+---
+
+when we can, it would be nice to tag the entities mentioned in the news articles, like webxr.
+
+---
+
+does our discussion forum also feed our tweet generator? there's not much content there yet, but there will be.
+
+---
+
+what I mean for "Tagging" is if the company WebXR is mentioned in a tweet, we should be tagging them @webXR or whatever their social media handle is, so that they notice and potentially retweet.  This is about getting our tweets noticed and spread widely by others.
+
+---
+
+in the modal, i'd like clickable links to the profile page for easy verification.
+
+---
+
+if a tweet was generated from an article online, we should include the link, right?
+
+---
+
+queue and drafts should be different sections. drafts on top
+
+---
+
+still a cluttered mess [Image #7]
+
+---
+
+maybe we're not ready to generate tweets.  i think at this point I'd prefer to just see our captured data
+
+---
+
+normalize the r/MachineLearning label and add last received
