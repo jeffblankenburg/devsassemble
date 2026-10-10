@@ -418,8 +418,8 @@ function ConfigureModal({
 }
 
 /**
- * The whole queue: one lean, flat list of draft + scheduled tweets, each with a
- * Configure button that opens the editor/scheduler modal.
+ * Two sections: Drafts (on top, with the composer) and Queue (scheduled, below).
+ * Every row has a Configure button that opens the editor/scheduler modal.
  */
 export function TweetConsole({
   drafts,
@@ -430,8 +430,6 @@ export function TweetConsole({
 }) {
   // A TweetRow opens Configure; the "new" sentinel opens the blank composer.
   const [active, setActive] = useState<TweetRow | "new" | null>(null);
-  // Scheduled first (time-sensitive), then drafts.
-  const rows = [...scheduled, ...drafts];
   // Latest future schedule time — the anchor for "+1h / +3h after the last one".
   const latestScheduledMs =
     scheduled.reduce((max, t) => {
@@ -441,9 +439,10 @@ export function TweetConsole({
 
   return (
     <>
+      {/* Drafts */}
       <div className="mt-8 flex items-center justify-between gap-3">
         <h2 className="font-display text-2xl uppercase tracking-wide text-brand-ink">
-          Queue
+          Drafts
         </h2>
         <button
           type="button"
@@ -453,18 +452,31 @@ export function TweetConsole({
           ✍ Write a tweet
         </button>
       </div>
-
-      {rows.length === 0 ? (
+      {drafts.length === 0 ? (
         <p className="mt-4 text-brand-ink/70">
-          No tweets waiting. Write one, hit “Generate drafts now,” or wait for
+          No drafts waiting. Write one, hit “Generate drafts now,” or wait for
           the daily run.
         </p>
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
-          {rows.map((t) => (
+          {drafts.map((t) => (
             <TweetRowItem key={t.id} tweet={t} onConfigure={setActive} />
           ))}
         </ul>
+      )}
+
+      {/* Queue (scheduled) */}
+      {scheduled.length > 0 && (
+        <>
+          <h2 className="mt-10 font-display text-2xl uppercase tracking-wide text-brand-ink">
+            Queue
+          </h2>
+          <ul className="mt-4 flex flex-col gap-2">
+            {scheduled.map((t) => (
+              <TweetRowItem key={t.id} tweet={t} onConfigure={setActive} />
+            ))}
+          </ul>
+        </>
       )}
 
       {active && (
