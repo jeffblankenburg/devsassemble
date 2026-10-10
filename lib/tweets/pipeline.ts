@@ -4,10 +4,36 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { gatherTweetMaterial } from "@/lib/tweets/gather";
 import { fetchDevNews, devNewsToText } from "@/lib/tweets/sources";
 import { generateTweetOptions, type TweetOption } from "@/lib/ai/tweets";
+import { tweetLength, TWEET_MAX } from "@/lib/tweets/length";
 
 export type DraftResult =
   | { ok: true; id: string; optionCount: number; preview: string }
   | { ok: false; error: string };
+
+/**
+ * Guarantee the source link is actually in the posted text — Claude often keeps
+ * it only as metadata, which would ship a link-less tweet and waste the whole
+ * point (driving traffic + getting the cited account to notice). If the url is
+ * already present we leave it; otherwise we append it, trimming the body on a
+ * word boundary only if needed to stay under 280.
+ */
+function ensureSourceLink(body: string, url: string | null): string {
+  if (!url) return body;
+  const base = body.trim();
+  if (base.includes(url)) return base;
+
+  const suffix = `\n\n${url}`;
+  if (tweetLength(base + suffix) <= TWEET_MAX) return base + suffix;
+
+  // Too long with the link — trim trailing words until it fits.
+  const words = base.split(/\s+/);
+  while (words.length > 1) {
+    words.pop();
+    const trimmed = words.join(" ") + "…";
+    if (tweetLength(trimmed + suffix) <= TWEET_MAX) return trimmed + suffix;
+  }
+  return base + suffix;
+}
 
 /**
  * One draft cycle: gather the week's community material, pull a dev-news digest
@@ -53,7 +79,7 @@ export async function draftTweets(opts?: {
       options.map((o) => ({
         status: "draft",
         kind: o.kind,
-        body: o.body,
+        body: ensureSourceLink(o.body, o.source_url),
         source_url: o.source_url,
         rationale: o.rationale,
         created_for: createdFor,
