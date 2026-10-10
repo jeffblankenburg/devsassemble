@@ -10,6 +10,7 @@ export type TweetRow = {
   source_url: string | null;
   rationale: string | null;
   created_for: string;
+  batch_date: string | null;
   scheduled_for: string | null;
   posted_url: string | null;
   bluesky_url: string | null;
@@ -18,7 +19,7 @@ export type TweetRow = {
 };
 
 const COLUMNS =
-  "id, status, kind, body, source_url, rationale, created_for, scheduled_for, posted_url, bluesky_url, posted_at, created_at";
+  "id, status, kind, body, source_url, rationale, created_for, batch_date, scheduled_for, posted_url, bluesky_url, posted_at, created_at";
 
 export async function listDraftTweets(): Promise<TweetRow[]> {
   const admin = createAdminClient();

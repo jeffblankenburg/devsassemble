@@ -17,7 +17,7 @@ export type DraftResult =
  * already present we leave it; otherwise we append it, trimming the body on a
  * word boundary only if needed to stay under 280.
  */
-function ensureSourceLink(body: string, url: string | null): string {
+export function ensureSourceLink(body: string, url: string | null): string {
   if (!url) return body;
   const base = body.trim();
   if (base.includes(url)) return base;

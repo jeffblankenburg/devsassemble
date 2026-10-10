@@ -5,21 +5,25 @@ import {
   listScheduledTweets,
   listRecentPostedTweets,
 } from "@/lib/tweets/queries";
+import { getAutopilot } from "@/lib/settings";
 import {
   GenerateButton,
   TweetConsole,
   PostedAt,
 } from "@/components/admin/tweet-queue";
+import { AutopilotPanel } from "@/components/admin/autopilot-panel";
 
 export const metadata: Metadata = { title: "Tweets" };
 
 export default async function AdminTweetsPage() {
   await requireAdmin();
-  const [drafts, scheduled, posted] = await Promise.all([
+  const [drafts, scheduled, posted, autopilot] = await Promise.all([
     listDraftTweets(),
     listScheduledTweets(),
     listRecentPostedTweets(10),
+    getAutopilot(),
   ]);
+  const pendingBatch = drafts.filter((d) => d.batch_date).length;
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
@@ -29,6 +33,12 @@ export default async function AdminTweetsPage() {
         </h1>
         <GenerateButton />
       </div>
+
+      <AutopilotPanel
+        enabled={autopilot.enabled}
+        mode={autopilot.mode}
+        pending={pendingBatch}
+      />
 
       <TweetConsole drafts={drafts} scheduled={scheduled} />
 

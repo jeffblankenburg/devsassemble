@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { publishTweet } from "@/lib/tweets/publish";
 import { draftTweets } from "@/lib/tweets/pipeline";
 import { tweetLength, TWEET_MAX } from "@/lib/tweets/length";
+import { setAutopilot } from "@/lib/settings";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type TweetActionState = {
@@ -149,6 +150,30 @@ export async function scheduleTweet(
 
   revalidatePath("/admin/tweets");
   return { ok: true };
+}
+
+/**
+ * Approve the pending autopilot batch — flip the planned drafts to scheduled so
+ * the publish cron posts them at their slots. Only future slots are approved,
+ * so a stale batch can't dump out all at once.
+ */
+export async function approveTodayBatch(): Promise<void> {
+  const admin = await requireAdmin();
+  const db = createAdminClient();
+  await db
+    .from("tweets")
+    .update({ status: "scheduled", approved_by: admin.id })
+    .eq("status", "draft")
+    .not("batch_date", "is", null)
+    .gt("scheduled_for", new Date().toISOString());
+  revalidatePath("/admin/tweets");
+}
+
+/** Flip the autopilot kill-switch on/off. */
+export async function toggleAutopilot(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await setAutopilot({ enabled: formData.get("enabled") === "true" });
+  revalidatePath("/admin/tweets");
 }
 
 /** Discard a draft. */

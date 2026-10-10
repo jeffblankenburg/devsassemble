@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 // Tweet links syndicate off-site — force the prod origin, never localhost.
 import { PUBLIC_SITE_URL as SITE_URL } from "@/lib/email/config";
@@ -8,6 +9,28 @@ import { formatFullDate, formatTime, tzLabel } from "@/lib/events/format";
 import type { EventRow } from "@/lib/events/queries";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * A predicate that tells whether a URL has already been covered by any draft,
+ * scheduled, or posted tweet — matched against both the stored source_url and
+ * the tweet text. Used to avoid re-surfacing the same item run after run.
+ */
+export async function buildCoveredUrlMatcher(
+  admin: SupabaseClient,
+): Promise<(url: string) => boolean> {
+  const { data } = await admin
+    .from("tweets")
+    .select("body, source_url")
+    .in("status", ["draft", "scheduled", "posted"]);
+  const corpus = ((data ?? []) as {
+    body: string | null;
+    source_url: string | null;
+  }[])
+    .map((t) => `${t.source_url ?? ""} ${t.body ?? ""}`.toLowerCase())
+    .join("\n");
+  return (url: string) =>
+    corpus.includes(url.replace(/\/$/, "").toLowerCase());
+}
 
 const EVENT_COLUMNS =
   "id, slug, title, summary, description, starts_at, ends_at, timezone, location, url, is_virtual, host, accent, status, recurrence, recurrence_until, recurrence_exceptions, rrule, recurrence_count, recurrence_overrides, is_live, stream_embed_url, created_by, created_at, updated_at";
@@ -25,21 +48,9 @@ export async function gatherTweetMaterial(now = new Date()): Promise<TweetMateri
   const soonMs = now.getTime() + WEEK_MS;
   const lines: string[] = [];
 
-  // Anything we've already drafted, scheduled, or posted — so we don't keep
-  // resurfacing the same event/project/tool/discussion run after run. We match
-  // an item's canonical URL against the links + text of every prior tweet.
-  const { data: priorTweets } = await admin
-    .from("tweets")
-    .select("body, source_url")
-    .in("status", ["draft", "scheduled", "posted"]);
-  const coveredCorpus = ((priorTweets ?? []) as {
-    body: string | null;
-    source_url: string | null;
-  }[])
-    .map((t) => `${t.source_url ?? ""} ${t.body ?? ""}`.toLowerCase())
-    .join("\n");
-  const isCovered = (url: string) =>
-    coveredCorpus.includes(url.replace(/\/$/, "").toLowerCase());
+  // Skip anything we've already drafted, scheduled, or posted — so we don't
+  // keep resurfacing the same event/project/tool/discussion run after run.
+  const isCovered = await buildCoveredUrlMatcher(admin);
 
   // Upcoming events (next 7 days), recurring series expanded.
   const { data: eventRows } = await admin

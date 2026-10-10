@@ -85,6 +85,8 @@ function TweetRowItem({
 }) {
   const [deleting, startDelete] = useTransition();
   const scheduled = tweet.status === "scheduled";
+  // Planned (batch) drafts carry a slot time too — show it, styled differently.
+  const showTime = !!tweet.scheduled_for;
 
   function onDelete() {
     startDelete(async () => {
@@ -97,19 +99,19 @@ function TweetRowItem({
   return (
     <li className="flex items-center gap-3 rounded-[var(--radius-comic)] border-ink bg-surface px-3 py-2 shadow-comic-sm">
       <KindTag kind={tweet.kind} />
-      {scheduled && (
+      {showTime && (
         <span
           suppressHydrationWarning
-          className="shrink-0 rounded-md border-[2px] border-brand-ink bg-brand-blue px-2 py-0.5 font-mono text-[11px] text-white"
+          className={`shrink-0 rounded-md border-[2px] border-brand-ink px-2 py-0.5 font-mono text-[11px] ${
+            scheduled ? "bg-brand-blue text-white" : "bg-brand-cream text-brand-ink"
+          }`}
         >
-          {tweet.scheduled_for
-            ? new Date(tweet.scheduled_for).toLocaleString(undefined, {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              })
-            : "scheduled"}
+          {new Date(tweet.scheduled_for as string).toLocaleString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          })}
         </span>
       )}
       <p className="min-w-0 flex-1 truncate text-sm text-brand-ink/85">

@@ -31,7 +31,7 @@ const MODEL = "claude-sonnet-4-6";
 
 const SYSTEM = `You write tweets for @devsassembleAI on X — the account of DevsAssemble, a community where developers share what they're building with AI, swap tools and prompts, and meet up at events.
 
-Voice: upbeat, builder-to-builder, a little playful (comic-book energy), never corporate or hypey. You're one of them, not a brand mascot.
+Voice: genuinely enthusiastic and optimistic about what people are building, builder-to-builder, a little playful (comic-book energy), never corporate or hypey. You're one of them, celebrating the work — not a brand mascot.
 
 Hard rules for every tweet:
 - 280 characters MAX, including the link. Shorter is better.
@@ -120,6 +120,10 @@ export async function generateTweetOptions(
     messages: [{ role: "user", content: prompt }],
   });
 
+  return parseOptions(res);
+}
+
+function parseOptions(res: Anthropic.Message): TweetOption[] {
   let parsed: { options?: TweetOption[] };
   try {
     parsed = JSON.parse(textOf(res));
@@ -134,4 +138,49 @@ export async function generateTweetOptions(
       source_url: o.source_url?.trim() || null,
       rationale: o.rationale ?? "",
     }));
+}
+
+/**
+ * Plan a full day's batch of `count` DISTINCT tweets from the community material
+ * and (when present) a dev-news digest. Unlike generateTweetOptions, these are
+ * meant to go out across the day, so distinctness and a safety/quality bar
+ * matter: the prompt tells the model to skip anything weak rather than pad.
+ */
+export async function planTweets({
+  material,
+  news,
+  count,
+}: {
+  material: string;
+  news: string | null;
+  count: number;
+}): Promise<TweetOption[]> {
+  if (!client) return [];
+
+  const prompt = [
+    `Plan ${count} tweets for today for @devsassembleAI. They'll be scheduled across the day, so they MUST be distinct — different topics, different sources, different angles. No two should read like the same tweet.`,
+    "",
+    "COMMUNITY ACTIVITY ON THE SITE (link these with their devsassemble.ai URLs exactly as given):",
+    material || "(quiet on-site day — lean on the news below)",
+    "",
+    news
+      ? `DEV NEWS RIGHT NOW — Reddit (vibe-coding / AI-dev communities), Hacker News, Dev.to. React to the genuinely interesting ones and link the source URL EXACTLY as given:\n${news}`
+      : "(no fresh news available)",
+    "",
+    "Rules for the batch:",
+    `- Aim for ${count}, but SKIP anything low-quality, off-topic, mean-spirited, political, or NSFW — fewer great tweets beats padding with filler.`,
+    "- Mix site content and news. Vary the angle across the batch: a spotlight, a question, a hot take, a TIL, a genuine reaction, \"the timeline we were promised.\"",
+    "- Exactly one link per tweet: the source URL for news, the devsassemble.ai URL for site content. Use URLs only as given — never invent one.",
+    "- Enthusiastic and optimistic, celebrating what people are building. Each must follow every rule in your instructions.",
+  ].join("\n");
+
+  const res = await client.messages.create({
+    model: MODEL,
+    max_tokens: 4000,
+    system: SYSTEM,
+    output_config: { format: { type: "json_schema", schema: SCHEMA } },
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  return parseOptions(res);
 }
