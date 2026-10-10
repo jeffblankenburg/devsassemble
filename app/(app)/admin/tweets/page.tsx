@@ -5,11 +5,7 @@ import {
   listScheduledTweets,
   listRecentPostedTweets,
 } from "@/lib/tweets/queries";
-import {
-  GenerateButton,
-  TweetQueue,
-  ScheduledList,
-} from "@/components/admin/tweet-queue";
+import { GenerateButton, TweetConsole } from "@/components/admin/tweet-queue";
 
 export const metadata: Metadata = { title: "Tweets" };
 
@@ -52,19 +48,7 @@ export default async function AdminTweetsPage() {
         <GenerateButton />
       </div>
 
-      <h2 className="mt-10 font-display text-2xl uppercase tracking-wide text-brand-ink">
-        Drafts
-      </h2>
-      <TweetQueue drafts={drafts} />
-
-      {scheduled.length > 0 && (
-        <>
-          <h2 className="mt-12 font-display text-2xl uppercase tracking-wide text-brand-ink">
-            Scheduled
-          </h2>
-          <ScheduledList scheduled={scheduled} />
-        </>
-      )}
+      <TweetConsole drafts={drafts} scheduled={scheduled} />
 
       {posted.length > 0 && (
         <>

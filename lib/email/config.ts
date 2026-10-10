@@ -5,6 +5,16 @@ export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "https://devsassemble.ai"
 ).replace(/\/$/, "");
 
+// Canonical public origin for anything that leaves our walls — tweets, skeets,
+// any syndicated link. A dev/preview NEXT_PUBLIC_SITE_URL (localhost) must NEVER
+// leak into a published post, so this ignores any localhost value and falls back
+// to prod. Use this — not SITE_URL — for outbound social content.
+const PUBLIC_ENV_URL = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+export const PUBLIC_SITE_URL =
+  PUBLIC_ENV_URL && !/\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:|\/|$)/i.test(PUBLIC_ENV_URL)
+    ? PUBLIC_ENV_URL
+    : "https://devsassemble.ai";
+
 export const FROM_EMAIL =
   process.env.RESEND_FROM_EMAIL || "DevsAssemble <hello@devsassemble.ai>";
 

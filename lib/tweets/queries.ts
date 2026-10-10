@@ -2,13 +2,6 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type TweetAlternative = {
-  kind: string;
-  body: string;
-  source_url: string | null;
-  rationale: string;
-};
-
 export type TweetRow = {
   id: string;
   status: "draft" | "scheduled" | "posted" | "rejected";
@@ -16,7 +9,6 @@ export type TweetRow = {
   body: string;
   source_url: string | null;
   rationale: string | null;
-  alternatives: TweetAlternative[];
   created_for: string;
   scheduled_for: string | null;
   posted_url: string | null;
@@ -26,7 +18,7 @@ export type TweetRow = {
 };
 
 const COLUMNS =
-  "id, status, kind, body, source_url, rationale, alternatives, created_for, scheduled_for, posted_url, bluesky_url, posted_at, created_at";
+  "id, status, kind, body, source_url, rationale, created_for, scheduled_for, posted_url, bluesky_url, posted_at, created_at";
 
 export async function listDraftTweets(): Promise<TweetRow[]> {
   const admin = createAdminClient();

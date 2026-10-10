@@ -1,7 +1,8 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { SITE_URL } from "@/lib/email/config";
+// Tweet links syndicate off-site — force the prod origin, never localhost.
+import { PUBLIC_SITE_URL as SITE_URL } from "@/lib/email/config";
 import { upcomingOccurrences } from "@/lib/events/recurrence";
 import { formatFullDate, formatTime, tzLabel } from "@/lib/events/format";
 import type { EventRow } from "@/lib/events/queries";

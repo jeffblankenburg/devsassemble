@@ -6,7 +6,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { publishTweet } from "@/lib/tweets/publish";
 import { draftTweets } from "@/lib/tweets/pipeline";
 import { tweetLength, TWEET_MAX } from "@/lib/tweets/length";
-import type { TweetAlternative } from "@/lib/tweets/queries";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type TweetActionState = {
@@ -17,51 +16,16 @@ export type TweetActionState = {
   warning?: string;
 };
 
-type DraftRow = {
-  status: string;
-  kind: string;
-  body: string;
-  source_url: string | null;
-  alternatives: TweetAlternative[];
-};
-
-/**
- * Keep the un-chosen options from a batch as their own drafts, so "post/schedule
- * one, the rest wait in drafts" works. Excludes whichever body was chosen.
- */
-async function spawnLeftoverDrafts(
-  db: SupabaseClient,
-  row: DraftRow,
-  chosenBody: string,
-): Promise<void> {
-  const chosen = chosenBody.trim();
-  const leftover = [
-    { kind: row.kind, body: row.body, source_url: row.source_url, rationale: null },
-    ...(row.alternatives ?? []),
-  ].filter((o) => (o.body ?? "").trim().length > 0 && o.body.trim() !== chosen);
-  if (leftover.length === 0) return;
-  await db.from("tweets").insert(
-    leftover.map((o) => ({
-      status: "draft",
-      kind: o.kind,
-      body: o.body,
-      source_url: o.source_url ?? null,
-      rationale: o.rationale ?? null,
-      alternatives: [],
-    })),
-  );
-}
-
-async function loadDraft(
+async function loadStatus(
   db: SupabaseClient,
   id: string,
-): Promise<DraftRow | null> {
+): Promise<string | null> {
   const { data } = await db
     .from("tweets")
-    .select("status, kind, body, source_url, alternatives")
+    .select("status")
     .eq("id", id)
-    .maybeSingle<DraftRow>();
-  return data ?? null;
+    .maybeSingle<{ status: string }>();
+  return data?.status ?? null;
 }
 
 /** Post the (possibly edited) draft to X + Bluesky now. Admin/mod only. */
@@ -80,9 +44,9 @@ export async function approveAndPost(
   }
 
   const db = createAdminClient();
-  const row = await loadDraft(db, id);
-  if (!row) return { error: "Draft not found." };
-  if (row.status === "posted") return { error: "Already posted." };
+  const status = await loadStatus(db, id);
+  if (!status) return { error: "Draft not found." };
+  if (status === "posted") return { error: "Already posted." };
 
   const result = await publishTweet(db, {
     id,
@@ -91,8 +55,6 @@ export async function approveAndPost(
     approvedBy: admin.id,
   });
   if (!result.ok) return { error: result.error };
-
-  await spawnLeftoverDrafts(db, row, body);
 
   revalidatePath("/admin/tweets");
   return {
@@ -127,9 +89,9 @@ export async function scheduleTweet(
   }
 
   const db = createAdminClient();
-  const row = await loadDraft(db, id);
-  if (!row) return { error: "Draft not found." };
-  if (row.status === "posted") return { error: "Already posted." };
+  const status = await loadStatus(db, id);
+  if (!status) return { error: "Draft not found." };
+  if (status === "posted") return { error: "Already posted." };
 
   const { error } = await db
     .from("tweets")
@@ -143,44 +105,8 @@ export async function scheduleTweet(
     .eq("id", id);
   if (error) return { error: error.message };
 
-  await spawnLeftoverDrafts(db, row, body);
-
   revalidatePath("/admin/tweets");
   return { ok: true };
-}
-
-/** Move a scheduled tweet back to drafts (cancel the schedule). */
-export async function unscheduleTweet(formData: FormData): Promise<void> {
-  await requireAdmin();
-  const id = String(formData.get("id") ?? "");
-  if (!id) return;
-  const db = createAdminClient();
-  await db
-    .from("tweets")
-    .update({ status: "draft", scheduled_for: null })
-    .eq("id", id);
-  revalidatePath("/admin/tweets");
-}
-
-/** Publish a scheduled tweet immediately. */
-export async function postScheduledNow(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
-  const id = String(formData.get("id") ?? "");
-  if (!id) return;
-  const db = createAdminClient();
-  const { data: row } = await db
-    .from("tweets")
-    .select("status, body, source_url")
-    .eq("id", id)
-    .maybeSingle<{ status: string; body: string; source_url: string | null }>();
-  if (!row || row.status === "posted") return;
-  await publishTweet(db, {
-    id,
-    body: row.body,
-    sourceUrl: row.source_url,
-    approvedBy: admin.id,
-  });
-  revalidatePath("/admin/tweets");
 }
 
 /** Discard a draft. */
@@ -193,14 +119,19 @@ export async function rejectTweet(formData: FormData): Promise<void> {
   revalidatePath("/admin/tweets");
 }
 
-/** Run a draft cycle on demand. News (HN/Reddit/Dev.to) is opt-in via a toggle. */
+/**
+ * Run a draft cycle on demand. News (HN + Dev.to + ingested Reddit) is always
+ * included now that it's a free keyless fetch — each option lands as its own
+ * draft row.
+ */
 export async function generateNow(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _prev: TweetActionState,
-  formData: FormData,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _formData: FormData,
 ): Promise<TweetActionState> {
   await requireAdmin();
-  const includeNews = formData.get("include_news") === "on";
-  const result = await draftTweets({ includeNews });
+  const result = await draftTweets({ includeNews: true });
   revalidatePath("/admin/tweets");
   if (!result.ok) return { error: result.error };
   return { ok: true };

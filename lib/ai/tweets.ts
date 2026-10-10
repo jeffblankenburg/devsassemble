@@ -1,7 +1,9 @@
 import "server-only";
 
 import Anthropic from "@anthropic-ai/sdk";
-import { SITE_URL } from "@/lib/email/config";
+// Tweets syndicate off-site, so links must always be the prod origin — never a
+// localhost/preview NEXT_PUBLIC_SITE_URL. PUBLIC_SITE_URL guarantees that.
+import { PUBLIC_SITE_URL as SITE_URL } from "@/lib/email/config";
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 const client = apiKey ? new Anthropic() : null;

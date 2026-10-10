@@ -1,24 +1,34 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import {
   approveAndPost,
   scheduleTweet,
-  unscheduleTweet,
-  postScheduledNow,
   rejectTweet,
   generateNow,
   type TweetActionState,
 } from "@/lib/tweets/actions";
 import { tweetLength, TWEET_MAX } from "@/lib/tweets/length";
 import { ComicButton } from "@/components/brand/comic-button";
-import { ComicSwitch } from "@/components/profile/comic-switch";
 import { ComicDateTimePicker } from "@/components/admin/comic-date-time-picker";
-import type { TweetRow, TweetAlternative } from "@/lib/tweets/queries";
+import type { TweetRow } from "@/lib/tweets/queries";
+
+// Each tweet kind gets its own label color so the list scans at a glance.
+const KIND_STYLES: Record<string, string> = {
+  event: "bg-brand-blue text-white",
+  project: "bg-brand-purple text-white",
+  tool: "bg-brand-lime text-brand-ink",
+  discussion: "bg-brand-cream text-brand-ink",
+  news: "bg-brand-ink text-white",
+  evergreen: "bg-white text-brand-ink",
+};
 
 function KindTag({ kind }: { kind: string }) {
+  const style = KIND_STYLES[kind] ?? "bg-brand-cream text-brand-ink";
   return (
-    <span className="rounded-md border-[2px] border-brand-ink bg-brand-cream px-2 py-0.5 font-display text-xs uppercase tracking-wide text-brand-ink">
+    <span
+      className={`shrink-0 rounded-md border-[2px] border-brand-ink px-2 py-0.5 font-display text-xs uppercase tracking-wide ${style}`}
+    >
       {kind}
     </span>
   );
@@ -34,241 +44,268 @@ export function GenerateButton() {
       <ComicButton variant="lime" type="submit" disabled={pending}>
         {pending ? "Drafting…" : "Generate drafts now"}
       </ComicButton>
-      <label className="flex items-center gap-2 text-sm text-brand-ink/70">
-        <ComicSwitch name="include_news" />
-        Include AI news (web search — costs more)
-      </label>
+      <span className="text-sm text-brand-ink/60">
+        Pulls in community activity + dev news (HN, Dev.to, Reddit).
+      </span>
       {state.error && (
         <span className="text-sm text-brand-purple">{state.error}</span>
       )}
-      {state.ok && <span className="text-sm text-brand-ink/60">New draft added.</span>}
+      {state.ok && (
+        <span className="text-sm text-brand-ink/60">Drafts added below.</span>
+      )}
     </form>
   );
 }
 
-function TweetCard({ draft }: { draft: TweetRow }) {
-  const [body, setBody] = useState(draft.body);
-  const [schedLocal, setSchedLocal] = useState("");
-  const [state, action, pending] = useActionState<TweetActionState, FormData>(
-    approveAndPost,
-    {},
+/** Convert a stored UTC ISO string to the local "YYYY-MM-DDTHH:mm" the picker wants. */
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** One lean row: kind label, optional schedule chip, the text, a Configure button. */
+function TweetRowItem({
+  tweet,
+  onConfigure,
+}: {
+  tweet: TweetRow;
+  onConfigure: (t: TweetRow) => void;
+}) {
+  const scheduled = tweet.status === "scheduled";
+  return (
+    <li className="flex items-center gap-3 rounded-[var(--radius-comic)] border-ink bg-surface px-3 py-2 shadow-comic-sm">
+      <KindTag kind={tweet.kind} />
+      {scheduled && (
+        <span
+          suppressHydrationWarning
+          className="shrink-0 rounded-md border-[2px] border-brand-ink bg-brand-blue px-2 py-0.5 font-mono text-[11px] text-white"
+        >
+          {tweet.scheduled_for
+            ? new Date(tweet.scheduled_for).toLocaleString(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })
+            : "scheduled"}
+        </span>
+      )}
+      <p className="min-w-0 flex-1 truncate text-sm text-brand-ink/85">
+        {tweet.body}
+      </p>
+      <button
+        type="button"
+        onClick={() => onConfigure(tweet)}
+        className="focus-comic shrink-0 rounded-md border-ink bg-white px-3 py-1 font-display text-xs uppercase tracking-wide text-brand-ink shadow-comic-sm transition-transform hover:-translate-y-0.5"
+      >
+        Configure
+      </button>
+    </li>
   );
-  const [schedState, schedAction, schedPending] = useActionState<
+}
+
+function ConfigureModal({
+  tweet,
+  onClose,
+}: {
+  tweet: TweetRow;
+  onClose: () => void;
+}) {
+  const [body, setBody] = useState(tweet.body);
+  const [schedLocal, setSchedLocal] = useState(toLocalInput(tweet.scheduled_for));
+  const [deleting, startDelete] = useTransition();
+
+  const [postState, postAction, posting] = useActionState<
+    TweetActionState,
+    FormData
+  >(approveAndPost, {});
+  const [schedState, schedAction, scheduling] = useActionState<
     TweetActionState,
     FormData
   >(scheduleTweet, {});
 
   const len = tweetLength(body);
   const over = len > TWEET_MAX;
+  const empty = body.trim().length === 0;
 
-  if (schedState.ok) {
-    return (
-      <li className="rounded-[var(--radius-comic)] border-ink bg-brand-blue/15 p-4 shadow-comic">
-        <p className="font-display uppercase tracking-wide text-brand-ink">
-          Scheduled ✓ — it&apos;ll cross-post automatically at the set time.
-        </p>
-      </li>
-    );
+  // Close once an action lands — the page revalidates and the list refreshes.
+  useEffect(() => {
+    if (postState.ok || schedState.ok) onClose();
+  }, [postState.ok, schedState.ok, onClose]);
+
+  // Esc to dismiss.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  function onDelete() {
+    startDelete(async () => {
+      const fd = new FormData();
+      fd.set("id", tweet.id);
+      await rejectTweet(fd);
+      onClose();
+    });
   }
 
-  if (state.ok) {
-    return (
-      <li className="rounded-[var(--radius-comic)] border-ink bg-brand-lime/30 p-4 shadow-comic">
-        <p className="font-display uppercase tracking-wide text-brand-ink">
-          Posted ✓
-        </p>
-        <div className="mt-1 flex flex-wrap gap-3 text-sm">
-          {state.url && (
-            <a
-              href={state.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="focus-comic text-brand-blue underline"
-            >
-              View on X
-            </a>
-          )}
-          {state.blueskyUrl && (
-            <a
-              href={state.blueskyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="focus-comic text-brand-blue underline"
-            >
-              View on Bluesky
-            </a>
-          )}
-        </div>
-        {state.warning && (
-          <p className="mt-1 text-sm text-brand-purple">{state.warning}</p>
-        )}
-      </li>
-    );
-  }
+  const busy = posting || scheduling || deleting;
 
   return (
-    <li className="rounded-[var(--radius-comic)] border-ink bg-surface p-4 shadow-comic">
-      <div className="flex flex-wrap items-center gap-2">
-        <KindTag kind={draft.kind} />
-        <span className="font-mono text-xs uppercase tracking-widest text-brand-ink/50">
-          for {draft.created_for}
-        </span>
-        <span
-          className={`ml-auto font-mono text-xs ${over ? "text-brand-purple" : "text-brand-ink/55"}`}
-        >
-          {len}/{TWEET_MAX}
-        </span>
-      </div>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Configure tweet"
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg rounded-[var(--radius-comic)] border-ink bg-brand-cream p-5 shadow-comic"
+      >
+        <div className="flex items-center gap-2">
+          <KindTag kind={tweet.kind} />
+          <span className="font-mono text-xs uppercase tracking-widest text-brand-ink/50">
+            for {tweet.created_for}
+          </span>
+          <span
+            className={`ml-auto font-mono text-xs ${over ? "text-brand-purple" : "text-brand-ink/55"}`}
+          >
+            {len}/{TWEET_MAX}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="focus-comic ml-1 flex h-7 w-7 items-center justify-center rounded-md border-ink bg-white text-brand-ink shadow-comic-sm hover:bg-white/70"
+          >
+            ✕
+          </button>
+        </div>
 
-      {draft.rationale && (
-        <p className="mt-2 text-xs italic text-brand-ink/55">{draft.rationale}</p>
-      )}
+        {tweet.rationale && (
+          <p className="mt-3 text-xs italic text-brand-ink/55">
+            {tweet.rationale}
+          </p>
+        )}
 
-      <form action={action} className="mt-2 flex flex-col gap-2">
-        <input type="hidden" name="id" value={draft.id} />
-        <input type="hidden" name="source_url" value={draft.source_url ?? ""} />
         <textarea
-          name="body"
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          rows={3}
-          className="w-full resize-y rounded-[var(--radius-comic)] border-ink bg-white px-3 py-2 text-brand-ink outline-none focus:shadow-comic-sm"
+          rows={4}
+          className="mt-3 w-full resize-y rounded-[var(--radius-comic)] border-ink bg-white px-3 py-2 text-brand-ink outline-none focus:shadow-comic-sm"
         />
-        <div className="flex flex-wrap items-center gap-3">
-          <ComicButton
-            variant="blue"
-            type="submit"
-            disabled={pending || over || body.trim().length === 0}
-          >
-            {pending ? "Posting…" : "Approve & post"}
-          </ComicButton>
-          {state.error && (
-            <span className="text-sm text-brand-purple">{state.error}</span>
-          )}
-        </div>
-      </form>
 
-      <form
-        action={schedAction}
-        className="mt-3 flex flex-wrap items-center gap-2 border-t-2 border-brand-ink/10 pt-3"
-      >
-        <input type="hidden" name="id" value={draft.id} />
-        <input type="hidden" name="source_url" value={draft.source_url ?? ""} />
-        <input type="hidden" name="body" value={body} />
-        <input
-          type="hidden"
-          name="scheduled_for"
-          value={schedLocal ? new Date(schedLocal).toISOString() : ""}
-        />
-        <span className="text-sm text-brand-ink/70">…or schedule for</span>
-        <ComicDateTimePicker name="_sched" onChange={setSchedLocal} />
-        <button
-          type="submit"
-          disabled={schedPending || over || body.trim().length === 0 || !schedLocal}
-          className="focus-comic rounded-md border-ink bg-surface px-4 py-2 font-display text-sm uppercase tracking-wide text-brand-ink shadow-comic-sm transition-transform hover:-translate-y-0.5 disabled:opacity-50"
-        >
-          {schedPending ? "Scheduling…" : "Schedule"}
-        </button>
-        {schedState.error && (
-          <span className="text-sm text-brand-purple">{schedState.error}</span>
-        )}
-      </form>
-
-      {draft.alternatives.length > 0 && (
-        <div className="mt-3 border-t-2 border-brand-ink/10 pt-3">
+        <div className="mt-4">
           <p className="font-display text-xs uppercase tracking-wide text-brand-ink/50">
-            Other options
+            Schedule for
           </p>
-          <ul className="mt-2 flex flex-col gap-2">
-            {draft.alternatives.map((alt: TweetAlternative, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm">
-                <button
-                  type="button"
-                  onClick={() => setBody(alt.body)}
-                  className="focus-comic shrink-0 rounded-md border-[2px] border-brand-ink bg-brand-cream px-2 py-0.5 font-display text-xs uppercase text-brand-ink hover:-translate-y-0.5"
-                >
-                  Use
-                </button>
-                <span className="text-brand-ink/80">{alt.body}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-2">
+            <ComicDateTimePicker
+              name="_sched"
+              defaultValue={toLocalInput(tweet.scheduled_for)}
+              onChange={setSchedLocal}
+            />
+          </div>
         </div>
-      )}
 
-      <form action={rejectTweet} className="mt-3">
-        <input type="hidden" name="id" value={draft.id} />
-        <button
-          type="submit"
-          className="focus-comic text-xs uppercase tracking-wide text-brand-ink/50 hover:text-brand-purple"
-        >
-          Delete draft
-        </button>
-      </form>
-    </li>
-  );
-}
-
-export function ScheduledList({ scheduled }: { scheduled: TweetRow[] }) {
-  if (scheduled.length === 0) return null;
-  return (
-    <ul className="mt-4 flex flex-col gap-3">
-      {scheduled.map((t) => (
-        <li
-          key={t.id}
-          className="rounded-[var(--radius-comic)] border-ink bg-surface p-4 shadow-comic"
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md border-[2px] border-brand-ink bg-brand-blue px-2 py-0.5 font-display text-xs uppercase tracking-wide text-white">
-              Scheduled
-            </span>
-            <span
-              suppressHydrationWarning
-              className="font-mono text-xs text-brand-ink/70"
+        <div className="mt-5 flex flex-wrap items-center gap-3 border-t-2 border-brand-ink/10 pt-4">
+          <form action={postAction}>
+            <input type="hidden" name="id" value={tweet.id} />
+            <input type="hidden" name="source_url" value={tweet.source_url ?? ""} />
+            <input type="hidden" name="body" value={body} />
+            <ComicButton
+              variant="blue"
+              type="submit"
+              disabled={busy || over || empty}
             >
-              {t.scheduled_for ? new Date(t.scheduled_for).toLocaleString() : ""}
-            </span>
-          </div>
-          <p className="mt-2 text-brand-ink/85">{t.body}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <form action={postScheduledNow}>
-              <input type="hidden" name="id" value={t.id} />
-              <button
-                type="submit"
-                className="focus-comic rounded-md border-ink bg-brand-blue px-3 py-1 font-display text-xs uppercase tracking-wide text-white shadow-comic-sm"
-              >
-                Post now
-              </button>
-            </form>
-            <form action={unscheduleTweet}>
-              <input type="hidden" name="id" value={t.id} />
-              <button
-                type="submit"
-                className="focus-comic rounded-md border-ink bg-surface px-3 py-1 font-display text-xs uppercase tracking-wide text-brand-ink shadow-comic-sm hover:bg-brand-cream"
-              >
-                Cancel → drafts
-              </button>
-            </form>
-          </div>
-        </li>
-      ))}
-    </ul>
+              {posting ? "Posting…" : "Post now"}
+            </ComicButton>
+          </form>
+
+          <form action={schedAction}>
+            <input type="hidden" name="id" value={tweet.id} />
+            <input type="hidden" name="source_url" value={tweet.source_url ?? ""} />
+            <input type="hidden" name="body" value={body} />
+            <input
+              type="hidden"
+              name="scheduled_for"
+              value={schedLocal ? new Date(schedLocal).toISOString() : ""}
+            />
+            <button
+              type="submit"
+              disabled={busy || over || empty || !schedLocal}
+              className="focus-comic rounded-md border-ink bg-surface px-4 py-2 font-display text-sm uppercase tracking-wide text-brand-ink shadow-comic-sm transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+            >
+              {scheduling
+                ? "Scheduling…"
+                : tweet.status === "scheduled"
+                  ? "Reschedule"
+                  : "Schedule"}
+            </button>
+          </form>
+
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={busy}
+            className="focus-comic ml-auto text-xs uppercase tracking-wide text-brand-ink/50 hover:text-brand-purple disabled:opacity-50"
+          >
+            {deleting ? "Deleting…" : "Delete"}
+          </button>
+        </div>
+
+        {(postState.error || schedState.error) && (
+          <p className="mt-3 text-sm text-brand-purple">
+            {postState.error || schedState.error}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
 
-export function TweetQueue({ drafts }: { drafts: TweetRow[] }) {
-  if (drafts.length === 0) {
+/**
+ * The whole queue: one lean, flat list of draft + scheduled tweets, each with a
+ * Configure button that opens the editor/scheduler modal.
+ */
+export function TweetConsole({
+  drafts,
+  scheduled,
+}: {
+  drafts: TweetRow[];
+  scheduled: TweetRow[];
+}) {
+  const [active, setActive] = useState<TweetRow | null>(null);
+  // Scheduled first (time-sensitive), then drafts.
+  const rows = [...scheduled, ...drafts];
+
+  if (rows.length === 0) {
     return (
       <p className="mt-6 text-brand-ink/70">
-        No drafts waiting. Use “Generate drafts now” or wait for the daily run.
+        No tweets waiting. Use “Generate drafts now” or wait for the daily run.
       </p>
     );
   }
+
   return (
-    <ul className="mt-6 flex flex-col gap-4">
-      {drafts.map((d) => (
-        <TweetCard key={d.id} draft={d} />
-      ))}
-    </ul>
+    <>
+      <ul className="mt-6 flex flex-col gap-2">
+        {rows.map((t) => (
+          <TweetRowItem key={t.id} tweet={t} onConfigure={setActive} />
+        ))}
+      </ul>
+      {active && (
+        <ConfigureModal
+          key={active.id}
+          tweet={active}
+          onClose={() => setActive(null)}
+        />
+      )}
+    </>
   );
 }

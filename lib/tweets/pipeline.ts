@@ -10,22 +10,24 @@ export type DraftResult =
   | { ok: false; error: string };
 
 /**
- * One draft cycle: gather the week's community material, optionally pull a
- * news digest, ask Claude for 2-3 options, and store them as a single `draft`
- * row (top option as the body, the rest as alternatives). Shared by the daily
- * cron and the "Generate now" admin button. Never posts — approval is in the UI.
+ * One draft cycle: gather the week's community material, pull a dev-news digest
+ * (HN + Dev.to + IFTTT-ingested Reddit), ask Claude for 2-3 options, and store
+ * EACH option as its own `draft` row — a flat queue, no nested "alternatives".
+ * Shared by the daily cron and the "Generate now" admin button. Never posts —
+ * approval happens in the UI.
  *
- * News (`includeNews`) is off by default: it runs a web-search round-trip that
- * ingests page content and is the main cost driver, so it's opt-in per run.
+ * News is on by default now that it's a free keyless fetch (no web search). Pass
+ * `includeNews: false` only to skip it deliberately.
  */
 export async function draftTweets(opts?: {
   includeNews?: boolean;
   now?: Date;
 }): Promise<DraftResult> {
   const now = opts?.now ?? new Date();
+  const includeNews = opts?.includeNews !== false;
   const material = await gatherTweetMaterial(now);
   let news: string | null = null;
-  if (opts?.includeNews) {
+  if (includeNews) {
     const items = await fetchDevNews();
     news = items.length ? devNewsToText(items) : null;
   }
@@ -43,27 +45,28 @@ export async function draftTweets(opts?: {
     return { ok: false, error: "No tweet options were generated." };
   }
 
-  const [primary, ...rest] = options;
   const admin = createAdminClient();
+  const createdFor = now.toISOString().slice(0, 10);
   const { data, error } = await admin
     .from("tweets")
-    .insert({
-      status: "draft",
-      kind: primary.kind,
-      body: primary.body,
-      source_url: primary.source_url,
-      rationale: primary.rationale,
-      alternatives: rest,
-      created_for: now.toISOString().slice(0, 10),
-    })
-    .select("id")
-    .single();
+    .insert(
+      options.map((o) => ({
+        status: "draft",
+        kind: o.kind,
+        body: o.body,
+        source_url: o.source_url,
+        rationale: o.rationale,
+        created_for: createdFor,
+      })),
+    )
+    .select("id");
 
   if (error) return { ok: false, error: error.message };
+  const rows = (data ?? []) as { id: string }[];
   return {
     ok: true,
-    id: (data as { id: string }).id,
+    id: rows[0]?.id ?? "",
     optionCount: options.length,
-    preview: primary.body,
+    preview: options[0].body,
   };
 }
