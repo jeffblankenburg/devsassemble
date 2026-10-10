@@ -5,7 +5,11 @@ import {
   listScheduledTweets,
   listRecentPostedTweets,
 } from "@/lib/tweets/queries";
-import { GenerateButton, TweetConsole } from "@/components/admin/tweet-queue";
+import {
+  GenerateButton,
+  TweetConsole,
+  PostedAt,
+} from "@/components/admin/tweet-queue";
 
 export const metadata: Metadata = { title: "Tweets" };
 
@@ -61,6 +65,9 @@ export default async function AdminTweetsPage() {
                 key={t.id}
                 className="rounded-[var(--radius-comic)] border-[2px] border-brand-ink/30 bg-surface p-3 text-sm"
               >
+                <div className="mb-1 flex items-center gap-2">
+                  <PostedAt iso={t.posted_at} />
+                </div>
                 <p className="text-brand-ink/85">{t.body}</p>
                 <div className="mt-1 flex flex-wrap gap-3">
                   {t.posted_url && (

@@ -16,6 +16,15 @@ export type TweetActionState = {
   warning?: string;
 };
 
+const VALID_KINDS = new Set([
+  "event",
+  "tool",
+  "discussion",
+  "project",
+  "evergreen",
+  "news",
+]);
+
 async function loadStatus(
   db: SupabaseClient,
   id: string,
@@ -28,7 +37,42 @@ async function loadStatus(
   return data?.status ?? null;
 }
 
-/** Post the (possibly edited) draft to X + Bluesky now. Admin/mod only. */
+/**
+ * Resolve the row to act on. With an id, validates it exists and isn't already
+ * posted. Without one (admin wrote a tweet from scratch), inserts a fresh draft
+ * and returns its id. Returns an error string on failure.
+ */
+async function resolveRow(
+  db: SupabaseClient,
+  {
+    id,
+    body,
+    kind,
+    sourceUrl,
+  }: { id: string; body: string; kind: string; sourceUrl: string | null },
+): Promise<{ id: string } | { error: string }> {
+  if (id) {
+    const status = await loadStatus(db, id);
+    if (!status) return { error: "Tweet not found." };
+    if (status === "posted") return { error: "Already posted." };
+    return { id };
+  }
+  const { data, error } = await db
+    .from("tweets")
+    .insert({
+      status: "draft",
+      kind: VALID_KINDS.has(kind) ? kind : "evergreen",
+      body,
+      source_url: sourceUrl,
+      created_for: new Date().toISOString().slice(0, 10),
+    })
+    .select("id")
+    .single();
+  if (error || !data) return { error: error?.message ?? "Could not save tweet." };
+  return { id: (data as { id: string }).id };
+}
+
+/** Post the (possibly edited or freshly written) tweet to X + Bluesky now. */
 export async function approveAndPost(
   _prev: TweetActionState,
   formData: FormData,
@@ -36,20 +80,19 @@ export async function approveAndPost(
   const admin = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const body = String(formData.get("body") ?? "").trim();
+  const kind = String(formData.get("kind") ?? "");
   const sourceUrl = String(formData.get("source_url") ?? "").trim() || null;
-  if (!id) return { error: "Missing id." };
   if (!body) return { error: "The tweet is empty." };
   if (tweetLength(body) > TWEET_MAX) {
     return { error: `Too long — ${tweetLength(body)}/${TWEET_MAX}.` };
   }
 
   const db = createAdminClient();
-  const status = await loadStatus(db, id);
-  if (!status) return { error: "Draft not found." };
-  if (status === "posted") return { error: "Already posted." };
+  const resolved = await resolveRow(db, { id, body, kind, sourceUrl });
+  if ("error" in resolved) return { error: resolved.error };
 
   const result = await publishTweet(db, {
-    id,
+    id: resolved.id,
     body,
     sourceUrl,
     approvedBy: admin.id,
@@ -73,9 +116,9 @@ export async function scheduleTweet(
   const admin = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const body = String(formData.get("body") ?? "").trim();
+  const kind = String(formData.get("kind") ?? "");
   const sourceUrl = String(formData.get("source_url") ?? "").trim() || null;
   const scheduledFor = String(formData.get("scheduled_for") ?? "");
-  if (!id) return { error: "Missing id." };
   if (!body) return { error: "The tweet is empty." };
   if (tweetLength(body) > TWEET_MAX) {
     return { error: `Too long — ${tweetLength(body)}/${TWEET_MAX}.` };
@@ -89,9 +132,8 @@ export async function scheduleTweet(
   }
 
   const db = createAdminClient();
-  const status = await loadStatus(db, id);
-  if (!status) return { error: "Draft not found." };
-  if (status === "posted") return { error: "Already posted." };
+  const resolved = await resolveRow(db, { id, body, kind, sourceUrl });
+  if ("error" in resolved) return { error: resolved.error };
 
   const { error } = await db
     .from("tweets")
@@ -102,7 +144,7 @@ export async function scheduleTweet(
       scheduled_for: when.toISOString(),
       approved_by: admin.id,
     })
-    .eq("id", id);
+    .eq("id", resolved.id);
   if (error) return { error: error.message };
 
   revalidatePath("/admin/tweets");

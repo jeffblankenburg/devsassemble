@@ -57,6 +57,22 @@ export function GenerateButton() {
   );
 }
 
+/** Render a stored UTC timestamp as the admin's local date + time. */
+export function PostedAt({ iso }: { iso: string | null }) {
+  if (!iso) return null;
+  return (
+    <span suppressHydrationWarning className="font-mono text-xs text-brand-ink/50">
+      {new Date(iso).toLocaleString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })}
+    </span>
+  );
+}
+
 /** Convert a stored UTC ISO string to the local "YYYY-MM-DDTHH:mm" the picker wants. */
 function toLocalInput(iso: string | null): string {
   if (!iso) return "";
@@ -65,7 +81,7 @@ function toLocalInput(iso: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-/** One lean row: kind label, optional schedule chip, the text, a Configure button. */
+/** One lean row: kind label, optional schedule chip, text, Configure + Delete. */
 function TweetRowItem({
   tweet,
   onConfigure,
@@ -73,7 +89,17 @@ function TweetRowItem({
   tweet: TweetRow;
   onConfigure: (t: TweetRow) => void;
 }) {
+  const [deleting, startDelete] = useTransition();
   const scheduled = tweet.status === "scheduled";
+
+  function onDelete() {
+    startDelete(async () => {
+      const fd = new FormData();
+      fd.set("id", tweet.id);
+      await rejectTweet(fd);
+    });
+  }
+
   return (
     <li className="flex items-center gap-3 rounded-[var(--radius-comic)] border-ink bg-surface px-3 py-2 shadow-comic-sm">
       <KindTag kind={tweet.kind} />
@@ -102,6 +128,16 @@ function TweetRowItem({
       >
         Configure
       </button>
+      <button
+        type="button"
+        onClick={onDelete}
+        disabled={deleting}
+        aria-label="Delete tweet"
+        title="Delete"
+        className="focus-comic shrink-0 rounded-md border-ink bg-white px-2 py-1 text-brand-ink/60 shadow-comic-sm transition-transform hover:-translate-y-0.5 hover:text-brand-purple disabled:opacity-50"
+      >
+        {deleting ? "…" : "✕"}
+      </button>
     </li>
   );
 }
@@ -113,17 +149,33 @@ const QUICK_STEPS = [
   { label: "1 day", hours: 24 },
 ];
 
+const COMPOSE_KINDS = [
+  "news",
+  "event",
+  "project",
+  "tool",
+  "discussion",
+  "evergreen",
+];
+
 function ConfigureModal({
   tweet,
   latestScheduledMs,
   onClose,
 }: {
-  tweet: TweetRow;
+  tweet: TweetRow | null; // null → compose a brand-new tweet
   latestScheduledMs: number | null;
   onClose: () => void;
 }) {
-  const [body, setBody] = useState(tweet.body);
-  const [schedLocal, setSchedLocal] = useState(toLocalInput(tweet.scheduled_for));
+  const compose = tweet === null;
+  const id = tweet?.id ?? "";
+  const sourceUrl = tweet?.source_url ?? "";
+
+  const [body, setBody] = useState(tweet?.body ?? "");
+  const [kind, setKind] = useState(tweet?.kind ?? "evergreen");
+  const [schedLocal, setSchedLocal] = useState(
+    toLocalInput(tweet?.scheduled_for ?? null),
+  );
   const [quickError, setQuickError] = useState<string | null>(null);
   const [deleting, startDelete] = useTransition();
   const [quickScheduling, startQuick] = useTransition();
@@ -149,8 +201,9 @@ function ConfigureModal({
     setQuickError(null);
     startQuick(async () => {
       const fd = new FormData();
-      fd.set("id", tweet.id);
-      fd.set("source_url", tweet.source_url ?? "");
+      fd.set("id", id);
+      fd.set("kind", kind);
+      fd.set("source_url", sourceUrl);
       fd.set("body", body);
       fd.set("scheduled_for", when.toISOString());
       const res = await scheduleTweet({}, fd);
@@ -176,7 +229,7 @@ function ConfigureModal({
   function onDelete() {
     startDelete(async () => {
       const fd = new FormData();
-      fd.set("id", tweet.id);
+      fd.set("id", id);
       await rejectTweet(fd);
       onClose();
     });
@@ -192,15 +245,25 @@ function ConfigureModal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Configure tweet"
+        aria-label={compose ? "Write a tweet" : "Configure tweet"}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg rounded-[var(--radius-comic)] border-ink bg-brand-cream p-5 shadow-comic"
       >
         <div className="flex items-center gap-2">
-          <KindTag kind={tweet.kind} />
-          <span className="font-mono text-xs uppercase tracking-widest text-brand-ink/50">
-            for {tweet.created_for}
-          </span>
+          {compose ? (
+            <span className="font-display text-lg uppercase tracking-wide text-brand-ink">
+              Write a tweet
+            </span>
+          ) : (
+            <>
+              <KindTag kind={kind} />
+              {tweet && (
+                <span className="font-mono text-xs uppercase tracking-widest text-brand-ink/50">
+                  for {tweet.created_for}
+                </span>
+              )}
+            </>
+          )}
           <span
             className={`ml-auto font-mono text-xs ${over ? "text-brand-purple" : "text-brand-ink/55"}`}
           >
@@ -216,7 +279,27 @@ function ConfigureModal({
           </button>
         </div>
 
-        {tweet.rationale && (
+        {compose && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {COMPOSE_KINDS.map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setKind(k)}
+                aria-pressed={kind === k}
+                className={`focus-comic rounded-md border-[2px] border-brand-ink px-2 py-0.5 font-display text-xs uppercase tracking-wide shadow-comic-sm ${
+                  kind === k
+                    ? (KIND_STYLES[k] ?? "bg-brand-cream text-brand-ink")
+                    : "bg-white text-brand-ink/60"
+                }`}
+              >
+                {k}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {tweet?.rationale && (
           <p className="mt-3 text-xs italic text-brand-ink/55">
             {tweet.rationale}
           </p>
@@ -226,7 +309,11 @@ function ConfigureModal({
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={4}
-          className="mt-3 w-full resize-y rounded-[var(--radius-comic)] border-ink bg-white px-3 py-2 text-brand-ink outline-none focus:shadow-comic-sm"
+          autoFocus={compose}
+          placeholder={
+            compose ? "What do you want to say? Links go right in the text." : undefined
+          }
+          className="mt-3 w-full resize-y rounded-[var(--radius-comic)] border-ink bg-white px-3 py-2 text-brand-ink outline-none placeholder:text-brand-ink/40 focus:shadow-comic-sm"
         />
 
         <div className="mt-4">
@@ -260,7 +347,7 @@ function ConfigureModal({
           <div className="mt-1">
             <ComicDateTimePicker
               name="_sched"
-              defaultValue={toLocalInput(tweet.scheduled_for)}
+              defaultValue={toLocalInput(tweet?.scheduled_for ?? null)}
               onChange={setSchedLocal}
             />
           </div>
@@ -268,8 +355,9 @@ function ConfigureModal({
 
         <div className="mt-5 flex flex-wrap items-center gap-3 border-t-2 border-brand-ink/10 pt-4">
           <form action={postAction}>
-            <input type="hidden" name="id" value={tweet.id} />
-            <input type="hidden" name="source_url" value={tweet.source_url ?? ""} />
+            <input type="hidden" name="id" value={id} />
+            <input type="hidden" name="kind" value={kind} />
+            <input type="hidden" name="source_url" value={sourceUrl} />
             <input type="hidden" name="body" value={body} />
             <ComicButton
               variant="blue"
@@ -281,8 +369,9 @@ function ConfigureModal({
           </form>
 
           <form action={schedAction}>
-            <input type="hidden" name="id" value={tweet.id} />
-            <input type="hidden" name="source_url" value={tweet.source_url ?? ""} />
+            <input type="hidden" name="id" value={id} />
+            <input type="hidden" name="kind" value={kind} />
+            <input type="hidden" name="source_url" value={sourceUrl} />
             <input type="hidden" name="body" value={body} />
             <input
               type="hidden"
@@ -296,20 +385,22 @@ function ConfigureModal({
             >
               {scheduling
                 ? "Scheduling…"
-                : tweet.status === "scheduled"
+                : tweet?.status === "scheduled"
                   ? "Reschedule"
                   : "Schedule"}
             </button>
           </form>
 
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={busy}
-            className="focus-comic ml-auto text-xs uppercase tracking-wide text-brand-ink/50 hover:text-brand-purple disabled:opacity-50"
-          >
-            {deleting ? "Deleting…" : "Delete"}
-          </button>
+          {!compose && (
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={busy}
+              className="focus-comic ml-auto text-xs uppercase tracking-wide text-brand-ink/50 hover:text-brand-purple disabled:opacity-50"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </button>
+          )}
         </div>
 
         {(postState.error || schedState.error || quickError) && (
@@ -333,7 +424,8 @@ export function TweetConsole({
   drafts: TweetRow[];
   scheduled: TweetRow[];
 }) {
-  const [active, setActive] = useState<TweetRow | null>(null);
+  // A TweetRow opens Configure; the "new" sentinel opens the blank composer.
+  const [active, setActive] = useState<TweetRow | "new" | null>(null);
   // Scheduled first (time-sensitive), then drafts.
   const rows = [...scheduled, ...drafts];
   // Latest future schedule time — the anchor for "+1h / +3h after the last one".
@@ -343,25 +435,38 @@ export function TweetConsole({
       return ms > max ? ms : max;
     }, 0) || null;
 
-  if (rows.length === 0) {
-    return (
-      <p className="mt-6 text-brand-ink/70">
-        No tweets waiting. Use “Generate drafts now” or wait for the daily run.
-      </p>
-    );
-  }
-
   return (
     <>
-      <ul className="mt-6 flex flex-col gap-2">
-        {rows.map((t) => (
-          <TweetRowItem key={t.id} tweet={t} onConfigure={setActive} />
-        ))}
-      </ul>
+      <div className="mt-8 flex items-center justify-between gap-3">
+        <h2 className="font-display text-2xl uppercase tracking-wide text-brand-ink">
+          Queue
+        </h2>
+        <button
+          type="button"
+          onClick={() => setActive("new")}
+          className="focus-comic rounded-md border-ink bg-brand-purple px-3 py-1.5 font-display text-xs uppercase tracking-wide text-white shadow-comic-sm transition-transform hover:-translate-y-0.5"
+        >
+          ✍ Write a tweet
+        </button>
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="mt-4 text-brand-ink/70">
+          No tweets waiting. Write one, hit “Generate drafts now,” or wait for
+          the daily run.
+        </p>
+      ) : (
+        <ul className="mt-4 flex flex-col gap-2">
+          {rows.map((t) => (
+            <TweetRowItem key={t.id} tweet={t} onConfigure={setActive} />
+          ))}
+        </ul>
+      )}
+
       {active && (
         <ConfigureModal
-          key={active.id}
-          tweet={active}
+          key={active === "new" ? "__new__" : active.id}
+          tweet={active === "new" ? null : active}
           latestScheduledMs={latestScheduledMs}
           onClose={() => setActive(null)}
         />

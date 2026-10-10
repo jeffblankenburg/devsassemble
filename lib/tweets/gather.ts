@@ -25,6 +25,22 @@ export async function gatherTweetMaterial(now = new Date()): Promise<TweetMateri
   const soonMs = now.getTime() + WEEK_MS;
   const lines: string[] = [];
 
+  // Anything we've already drafted, scheduled, or posted — so we don't keep
+  // resurfacing the same event/project/tool/discussion run after run. We match
+  // an item's canonical URL against the links + text of every prior tweet.
+  const { data: priorTweets } = await admin
+    .from("tweets")
+    .select("body, source_url")
+    .in("status", ["draft", "scheduled", "posted"]);
+  const coveredCorpus = ((priorTweets ?? []) as {
+    body: string | null;
+    source_url: string | null;
+  }[])
+    .map((t) => `${t.source_url ?? ""} ${t.body ?? ""}`.toLowerCase())
+    .join("\n");
+  const isCovered = (url: string) =>
+    coveredCorpus.includes(url.replace(/\/$/, "").toLowerCase());
+
   // Upcoming events (next 7 days), recurring series expanded.
   const { data: eventRows } = await admin
     .from("events")
@@ -36,6 +52,7 @@ export async function gatherTweetMaterial(now = new Date()): Promise<TweetMateri
       const ms = new Date(e.starts_at).getTime();
       return ms >= now.getTime() && ms <= soonMs;
     })
+    .filter((e) => !isCovered(`${SITE_URL}/events/${e.slug}`))
     .sort((a, b) => (a.starts_at < b.starts_at ? -1 : 1))
     .slice(0, 3);
   if (events.length) {
@@ -53,15 +70,16 @@ export async function gatherTweetMaterial(now = new Date()): Promise<TweetMateri
     .gte("created_at", sinceIso)
     .order("created_at", { ascending: false })
     .limit(4);
-  if (repos?.length) {
+  const freshRepos = ((repos ?? []) as {
+    owner: string;
+    name: string;
+    description: string | null;
+    kind: string;
+    github_url: string;
+  }[]).filter((r) => !isCovered(r.github_url));
+  if (freshRepos.length) {
     lines.push("\nNEW PROJECTS (browse at " + SITE_URL + "/projects):");
-    for (const r of repos as {
-      owner: string;
-      name: string;
-      description: string | null;
-      kind: string;
-      github_url: string;
-    }[]) {
+    for (const r of freshRepos) {
       lines.push(`- ${r.owner}/${r.name}${r.description ? ` — ${r.description}` : ""} (${r.github_url})`);
     }
   }
@@ -73,14 +91,15 @@ export async function gatherTweetMaterial(now = new Date()): Promise<TweetMateri
     .gte("created_at", sinceIso)
     .order("created_at", { ascending: false })
     .limit(4);
-  if (tools?.length) {
+  const freshTools = ((tools ?? []) as {
+    name: string;
+    description: string | null;
+    category: string;
+    url: string;
+  }[]).filter((t) => !isCovered(t.url));
+  if (freshTools.length) {
     lines.push("\nNEW TOOLS (browse at " + SITE_URL + "/tools):");
-    for (const t of tools as {
-      name: string;
-      description: string | null;
-      category: string;
-      url: string;
-    }[]) {
+    for (const t of freshTools) {
       lines.push(`- ${t.name}${t.description ? ` — ${t.description}` : ""} (${t.url})`);
     }
   }
@@ -92,13 +111,14 @@ export async function gatherTweetMaterial(now = new Date()): Promise<TweetMateri
     .gte("last_activity_at", sinceIso)
     .order("reply_count", { ascending: false })
     .limit(3);
-  if (topics?.length) {
+  const freshTopics = ((topics ?? []) as {
+    title: string;
+    slug: string;
+    reply_count: number;
+  }[]).filter((t) => !isCovered(`${SITE_URL}/discussions/${t.slug}`));
+  if (freshTopics.length) {
     lines.push("\nACTIVE DISCUSSIONS:");
-    for (const t of topics as {
-      title: string;
-      slug: string;
-      reply_count: number;
-    }[]) {
+    for (const t of freshTopics) {
       lines.push(`- "${t.title}" (${t.reply_count} replies) — ${SITE_URL}/discussions/${t.slug}`);
     }
   }
