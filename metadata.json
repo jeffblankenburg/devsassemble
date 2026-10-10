@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4JRDMKM94WMFND1CWDQN3MR",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 7,
+  "files_touched": [
+    "app/(app)/admin/tweets/page.tsx",
+    "components/admin/tweet-queue.tsx",
+    "lib/ai/tweets.ts",
+    "lib/email/config.ts",
+    "lib/tweets/actions.ts",
+    "lib/tweets/gather.ts",
+    "lib/tweets/pipeline.ts",
+    "lib/tweets/queries.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 65207,
+    "cache_creation_tokens": 3099189,
+    "cache_read_tokens": 265827096,
+    "output_tokens": 619749,
+    "api_call_count": 528
+  }
+}

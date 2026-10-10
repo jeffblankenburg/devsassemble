@@ -1,0 +1,134 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4JRDMKM94WMFND1CWDQN3MR",
+  "session_id": "401b1d31-3553-42ae-a1ae-2ec6309409e3",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-10T11:15:56.169374Z",
+  "branch": "main",
+  "checkpoints_count": 7,
+  "save_step_count": 3,
+  "files_touched": [
+    "app/(app)/admin/tweets/page.tsx",
+    "components/admin/tweet-queue.tsx",
+    "lib/ai/tweets.ts",
+    "lib/email/config.ts",
+    "lib/tweets/actions.ts",
+    "lib/tweets/gather.ts",
+    "lib/tweets/pipeline.ts",
+    "lib/tweets/queries.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-8[1m]",
+  "turn_id": "3ccef54a7db3",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 65207,
+    "cache_creation_tokens": 3099189,
+    "cache_read_tokens": 265827096,
+    "output_tokens": 619749,
+    "api_call_count": 528
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01GxaJu22Ab2V4bg9Kcaurvk",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "claude-api"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "1a6f08a35311",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 972,
+        "end": 973,
+        "entry_ids": [
+          "47e621aa-9e66-48d3-b601-48fbd9360ab1"
+        ],
+        "tool_use_id": "toolu_01GxaJu22Ab2V4bg9Kcaurvk"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01GxaJu22Ab2V4bg9Kcaurvk"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: claude-api",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01Ux4xGiUHiMKm4baPgkYSQ8",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "vercel:marketplace"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "1a6f08a35311",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 2296,
+        "end": 2297,
+        "entry_ids": [
+          "6342630f-a8a9-435e-aad5-85eec9fcbc4f"
+        ],
+        "tool_use_id": "toolu_01Ux4xGiUHiMKm4baPgkYSQ8"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01Ux4xGiUHiMKm4baPgkYSQ8"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: vercel:marketplace",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 55
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-10T11:15:55.986194Z",
+    "agent_lines": 300,
+    "agent_removed": 340,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 300,
+    "total_lines_changed": 640,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 15,
+      "agent_lines_removed": 2
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 300,
+      "agent_lines_removed": 340
+    }
+  ]
+}
