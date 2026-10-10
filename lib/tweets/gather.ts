@@ -74,44 +74,45 @@ export async function gatherTweetMaterial(now = new Date()): Promise<TweetMateri
     }
   }
 
-  // Recently shared projects/repos.
+  // Recently shared projects/repos. We link to the project ON OUR SITE (so the
+  // tweet pulls people into the community), not out to GitHub — the per-item
+  // `?p=<id>` keeps each link unique so dedup still works.
   const { data: repos } = await admin
     .from("repos")
-    .select("owner, name, description, kind, github_url, created_at")
+    .select("id, owner, name, description, created_at")
     .gte("created_at", sinceIso)
     .order("created_at", { ascending: false })
     .limit(4);
   const freshRepos = ((repos ?? []) as {
+    id: string;
     owner: string;
     name: string;
     description: string | null;
-    kind: string;
-    github_url: string;
-  }[]).filter((r) => !isCovered(r.github_url));
+  }[]).filter((r) => !isCovered(`${SITE_URL}/projects?p=${r.id}`));
   if (freshRepos.length) {
-    lines.push("\nNEW PROJECTS (browse at " + SITE_URL + "/projects):");
+    lines.push("\nNEW PROJECTS (link each to its page on our site):");
     for (const r of freshRepos) {
-      lines.push(`- ${r.owner}/${r.name}${r.description ? ` — ${r.description}` : ""} (${r.github_url})`);
+      lines.push(`- ${r.owner}/${r.name}${r.description ? ` — ${r.description}` : ""} — ${SITE_URL}/projects?p=${r.id}`);
     }
   }
 
-  // Recently shared tools.
+  // Recently shared tools — link to our site, not the tool's own URL.
   const { data: tools } = await admin
     .from("tools")
-    .select("name, description, category, url, created_at")
+    .select("id, name, description, category, created_at")
     .gte("created_at", sinceIso)
     .order("created_at", { ascending: false })
     .limit(4);
   const freshTools = ((tools ?? []) as {
+    id: string;
     name: string;
     description: string | null;
     category: string;
-    url: string;
-  }[]).filter((t) => !isCovered(t.url));
+  }[]).filter((t) => !isCovered(`${SITE_URL}/tools?t=${t.id}`));
   if (freshTools.length) {
-    lines.push("\nNEW TOOLS (browse at " + SITE_URL + "/tools):");
+    lines.push("\nNEW TOOLS (link each to its page on our site):");
     for (const t of freshTools) {
-      lines.push(`- ${t.name}${t.description ? ` — ${t.description}` : ""} (${t.url})`);
+      lines.push(`- ${t.name}${t.description ? ` — ${t.description}` : ""} — ${SITE_URL}/tools?t=${t.id}`);
     }
   }
 
