@@ -28,12 +28,16 @@ export async function GET(request: NextRequest) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      let needsOnboarding = false;
       if (user) {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("welcomed_at")
+          .select("welcomed_at, onboarded_at")
           .eq("id", user.id)
-          .maybeSingle<{ welcomed_at: string | null }>();
+          .maybeSingle<{
+            welcomed_at: string | null;
+            onboarded_at: string | null;
+          }>();
         if (profile && !profile.welcomed_at) {
           await supabase
             .from("profiles")
@@ -41,13 +45,18 @@ export async function GET(request: NextRequest) {
             .eq("id", user.id);
           after(() => sendWelcome(user.id));
         }
+        needsOnboarding = Boolean(profile && !profile.onboarded_at);
       }
 
       // Respect proxied host in production (Vercel).
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocal = process.env.NODE_ENV === "development";
       const base = isLocal || !forwardedHost ? origin : `https://${forwardedHost}`;
-      return NextResponse.redirect(`${base}${next}`);
+      // New members hit the required survey first, then continue to `next`.
+      const dest = needsOnboarding
+        ? `/onboarding?next=${encodeURIComponent(next)}`
+        : next;
+      return NextResponse.redirect(`${base}${dest}`);
     }
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(exchangeError.message)}`,

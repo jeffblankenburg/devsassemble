@@ -14,6 +14,7 @@ export type SessionUser = {
   displayName: string | null;
   avatarUrl: string | null;
   isBanned: boolean;
+  needsOnboarding: boolean;
 };
 
 /**
@@ -30,7 +31,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, username, display_name, avatar_url, is_banned")
+    .select("role, username, display_name, avatar_url, is_banned, onboarded_at")
     .eq("id", user.id)
     .single();
 
@@ -42,14 +43,21 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
     displayName: profile?.display_name ?? null,
     avatarUrl: profile?.avatar_url ?? null,
     isBanned: profile?.is_banned ?? false,
+    needsOnboarding: profile ? !profile.onboarded_at : false,
   };
 });
 
-/** Require an authenticated, non-banned user or redirect to /login. */
+/**
+ * Require an authenticated, non-banned, onboarded user. Un-onboarded users are
+ * sent to the required registration survey — this is the gate that makes the
+ * survey unskippable: every authed page and every server action flows through
+ * here. (The onboarding page + submit action use getSessionUser to avoid it.)
+ */
 export async function requireUser(): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user) redirect("/login");
   if (user.isBanned) redirect("/banned");
+  if (user.needsOnboarding) redirect("/onboarding");
   return user;
 }
 

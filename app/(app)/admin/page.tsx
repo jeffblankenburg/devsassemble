@@ -24,6 +24,12 @@ const SECTIONS = [
     accent: "bg-brand-ink text-white",
   },
   {
+    href: "/admin/survey",
+    title: "Survey results",
+    body: "Who's signing up: personas, tools, AI observability, and goals.",
+    accent: "bg-brand-purple text-white",
+  },
+  {
     href: "/admin/tweets",
     title: "Tweets",
     body: "Review @devsassembleAI drafts, edit, and cross-post to X + Bluesky.",
