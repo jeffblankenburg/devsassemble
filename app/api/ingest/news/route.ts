@@ -21,7 +21,6 @@ export async function POST(request: Request) {
     return Response.json({ error: "invalid json body" }, { status: 400 });
   }
 
-  const source = String(body.source ?? "IFTTT").trim().slice(0, 80);
   const title = String(body.title ?? "").trim().slice(0, 300);
   const url = String(body.url ?? "").trim();
   if (!title || !/^https?:\/\//i.test(url)) {
@@ -30,6 +29,14 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+
+  // The IFTTT applets hardcode an unreliable `source` (one still says
+  // "r/MachineLearning" for every subreddit). For Reddit links, trust the URL:
+  // derive the real subreddit from it. Otherwise fall back to the given source.
+  const sub = url.match(/reddit\.com\/(r\/[A-Za-z0-9_]+)/i);
+  const source = (
+    sub ? sub[1] : String(body.source ?? "IFTTT").trim()
+  ).slice(0, 80);
 
   const admin = createAdminClient();
   // Keep the table small.

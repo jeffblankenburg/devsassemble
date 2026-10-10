@@ -36,6 +36,8 @@ export function NewsFeed({ items }: { items: NewsItemRow[] }) {
   }, {});
   const sources = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
   const shown = active ? items.filter((i) => i.source === active) : items;
+  // Items arrive newest-first, so the first row is the most recent capture.
+  const lastReceived = items[0].created_at;
 
   const chip = (key: string | null, label: string, count: number) => (
     <button
@@ -53,7 +55,19 @@ export function NewsFeed({ items }: { items: NewsItemRow[] }) {
 
   return (
     <>
-      <div className="mt-6 flex flex-wrap gap-2">
+      <p className="mt-4 text-sm text-brand-ink/60">
+        Last received:{" "}
+        <span suppressHydrationWarning className="font-mono text-brand-ink/80">
+          {new Date(lastReceived).toLocaleString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          })}
+        </span>
+      </p>
+
+      <div className="mt-4 flex flex-wrap gap-2">
         {chip(null, "All", items.length)}
         {sources.map((s) => chip(s, s, counts[s]))}
       </div>
