@@ -18,9 +18,15 @@ const SECTIONS = [
     accent: "bg-brand-purple text-white",
   },
   {
+    href: "/admin/news",
+    title: "Captured news",
+    body: "Browse the raw Reddit/dev-news feed captured via IFTTT.",
+    accent: "bg-brand-ink text-white",
+  },
+  {
     href: "/admin/tweets",
     title: "Tweets",
-    body: "Review daily @devsassembleAI drafts, edit, and post to X.",
+    body: "Review @devsassembleAI drafts, edit, and cross-post to X + Bluesky.",
     accent: "bg-brand-lime text-brand-ink",
   },
 ];
