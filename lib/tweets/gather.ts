@@ -120,6 +120,7 @@ export async function gatherTweetMaterial(now = new Date()): Promise<TweetMateri
   const { data: topics } = await admin
     .from("topics")
     .select("title, slug, reply_count, last_activity_at")
+    .is("item_type", null) // item discussions are tweeted via the item itself
     .gte("last_activity_at", sinceIso)
     .order("reply_count", { ascending: false })
     .limit(3);

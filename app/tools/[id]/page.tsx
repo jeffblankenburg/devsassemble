@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PublicHeader } from "@/components/site/public-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { ToolCard } from "@/components/tools/tool-card";
+import { ItemDiscussion } from "@/components/forum/item-discussion";
 import { getTool } from "@/lib/tools/queries";
 import { getSessionUser } from "@/lib/auth/dal";
 
@@ -42,6 +43,12 @@ export default async function ToolDetailPage({ params }: Props) {
             loginHref={`/login?next=/tools/${id}`}
           />
         </div>
+        <ItemDiscussion
+          itemType="tool"
+          itemId={tool.id}
+          itemTitle={tool.name}
+          itemPath={`/tools/${id}`}
+        />
       </main>
       <SiteFooter />
     </>

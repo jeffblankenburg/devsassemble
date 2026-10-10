@@ -26,6 +26,9 @@ export function ToolCard({
   loginHref: string;
 }) {
   const { host, favicon } = hostAndFavicon(tool.url);
+  const detailHref = `/tools/${tool.id}`;
+  const pill =
+    "focus-comic inline-flex shrink-0 items-center gap-1 rounded-md border-[2px] border-brand-ink bg-surface px-3 py-1 font-display text-sm uppercase tracking-wide text-brand-ink shadow-comic-sm transition-transform hover:-translate-y-0.5 hover:bg-brand-lime";
 
   return (
     <article className="flex flex-col rounded-[var(--radius-comic)] border-ink bg-surface p-5 shadow-comic">
@@ -50,14 +53,12 @@ export function ToolCard({
               {toolCategoryLabel(tool.category)}
             </span>
           </div>
-          <a
-            href={tool.url}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href={detailHref}
             className="focus-comic mt-1 block truncate font-display text-xl uppercase tracking-wide text-brand-ink hover:text-brand-blue"
           >
             {tool.name}
-          </a>
+          </Link>
           <span className="block truncate font-mono text-xs text-muted">
             {host}
           </span>
@@ -84,7 +85,7 @@ export function ToolCard({
         )}
       </div>
 
-      <div className="mt-3">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <ToolReactionBar
           toolId={tool.id}
           reactions={tool.reactions}
@@ -92,6 +93,19 @@ export function ToolCard({
           isAuthed={isAuthed}
           loginHref={loginHref}
         />
+        <div className="flex items-center gap-2">
+          <a
+            href={tool.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={pill}
+          >
+            Visit ↗
+          </a>
+          <Link href={`${detailHref}#discussion`} className={pill}>
+            💬 Discuss
+          </Link>
+        </div>
       </div>
     </article>
   );

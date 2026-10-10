@@ -111,6 +111,21 @@ export async function getTopicBySlug(slug: string): Promise<TopicDetail | null> 
   return (data as unknown as TopicDetail) ?? null;
 }
 
+/** The forum topic backing a project/tool discussion, if one has been started. */
+export async function getItemTopic(
+  itemType: "project" | "tool",
+  itemId: string,
+): Promise<{ id: string; slug: string; is_locked: boolean } | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("topics")
+    .select("id, slug, is_locked")
+    .eq("item_type", itemType)
+    .eq("item_id", itemId)
+    .maybeSingle<{ id: string; slug: string; is_locked: boolean }>();
+  return data ?? null;
+}
+
 export async function listPosts(topicId: string): Promise<PostItem[]> {
   const supabase = await createClient();
   const { data, error } = await supabase

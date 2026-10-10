@@ -12,12 +12,9 @@ export function RepoCard({
   isAuthed: boolean;
   loginHref: string;
 }) {
-  // GitHub Discussions live at <repo>/discussions. GitHub redirects to the
-  // repo home if Discussions isn't enabled, so linking is safe. Only build it
-  // for real github.com URLs.
-  const discussUrl = /^https?:\/\/(www\.)?github\.com\//i.test(repo.github_url)
-    ? `${repo.github_url.replace(/\/+$/, "")}/discussions`
-    : null;
+  const detailHref = `/projects/${repo.id}`;
+  const pill =
+    "focus-comic inline-flex shrink-0 items-center gap-1 rounded-md border-[2px] border-brand-ink bg-surface px-3 py-1 font-display text-sm uppercase tracking-wide text-brand-ink shadow-comic-sm transition-transform hover:-translate-y-0.5 hover:bg-brand-lime";
 
   return (
     <article className="flex flex-col rounded-[var(--radius-comic)] border-ink bg-surface p-5 shadow-comic">
@@ -46,14 +43,12 @@ export function RepoCard({
               <span className="font-mono text-xs text-muted">★ {repo.stars}</span>
             )}
           </div>
-          <a
-            href={repo.github_url}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href={detailHref}
             className="focus-comic mt-1 block truncate font-display text-xl uppercase tracking-wide text-brand-ink hover:text-brand-blue"
           >
             {repo.owner}/{repo.name}
-          </a>
+          </Link>
           {repo.description && (
             <p className="mt-1 line-clamp-2 text-sm text-brand-ink/75">
               {repo.description}
@@ -90,16 +85,19 @@ export function RepoCard({
           isAuthed={isAuthed}
           loginHref={loginHref}
         />
-        {discussUrl && (
+        <div className="flex items-center gap-2">
           <a
-            href={discussUrl}
+            href={repo.github_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="focus-comic inline-flex shrink-0 items-center gap-1 rounded-md border-[2px] border-brand-ink bg-surface px-3 py-1 font-display text-sm uppercase tracking-wide text-brand-ink shadow-comic-sm transition-transform hover:-translate-y-0.5 hover:bg-brand-lime"
+            className={pill}
           >
-            💬 Discuss ↗
+            GitHub ↗
           </a>
-        )}
+          <Link href={`${detailHref}#discussion`} className={pill}>
+            💬 Discuss
+          </Link>
+        </div>
       </div>
     </article>
   );

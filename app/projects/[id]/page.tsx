@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PublicHeader } from "@/components/site/public-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RepoCard } from "@/components/repos/repo-card";
+import { ItemDiscussion } from "@/components/forum/item-discussion";
 import { getRepo } from "@/lib/repos/queries";
 import { getSessionUser } from "@/lib/auth/dal";
 
@@ -42,6 +43,12 @@ export default async function ProjectDetailPage({ params }: Props) {
             loginHref={`/login?next=/projects/${id}`}
           />
         </div>
+        <ItemDiscussion
+          itemType="project"
+          itemId={repo.id}
+          itemTitle={`${repo.owner}/${repo.name}`}
+          itemPath={`/projects/${id}`}
+        />
       </main>
       <SiteFooter />
     </>
