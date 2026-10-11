@@ -5,6 +5,12 @@ import { gatherTweetMaterial, buildCoveredUrlMatcher } from "@/lib/tweets/gather
 import { fetchDevNews, devNewsToText } from "@/lib/tweets/sources";
 import { ensureSourceLink } from "@/lib/tweets/pipeline";
 import { planTweets } from "@/lib/ai/tweets";
+import {
+  getVerifiedHandles,
+  registryToPromptText,
+  reconcileBody,
+  upsertProposals,
+} from "@/lib/social/handles";
 import { tweetLength, TWEET_MAX } from "@/lib/tweets/length";
 import { getZonedParts, zonedWallClockToUtcIso } from "@/lib/events/format";
 import { getAutopilot } from "@/lib/settings";
@@ -83,10 +89,16 @@ export async function planDay(opts?: {
   const isCovered = await buildCoveredUrlMatcher(admin);
   const news = (await fetchDevNews(40)).filter((i) => !isCovered(i.url));
   const newsText = news.length ? devNewsToText(news) : null;
+  const verified = await getVerifiedHandles(admin);
 
   let options;
   try {
-    options = await planTweets({ material: material.text, news: newsText, count });
+    options = await planTweets({
+      material: material.text,
+      news: newsText,
+      count,
+      handles: registryToPromptText(verified),
+    });
   } catch (err) {
     return {
       ok: false,
@@ -95,11 +107,20 @@ export async function planDay(opts?: {
   }
   if (!options.length) return { ok: false, error: "No tweets were generated." };
 
-  // Enforce the link, drop over-length, and guard against intra-batch and
-  // already-covered duplicate links.
+  await upsertProposals(admin, options.flatMap((o) => o.proposals));
+
+  // Reconcile @mentions against the verified registry, enforce the link, drop
+  // over-length, and guard against intra-batch + already-covered duplicate links.
   const seen = new Set<string>();
   const clean = options
-    .map((o) => ({ ...o, body: ensureSourceLink(o.body, o.source_url) }))
+    .map((o) => {
+      const r = reconcileBody(o.body, verified);
+      return {
+        ...o,
+        body: ensureSourceLink(r.body, o.source_url),
+        mentions: r.mentions,
+      };
+    })
     .filter((o) => {
       if (!o.body.trim() || tweetLength(o.body) > TWEET_MAX) return false;
       const key = (o.source_url ?? "").replace(/\/$/, "").toLowerCase();
@@ -124,6 +145,7 @@ export async function planDay(opts?: {
     created_for: batchDate,
     batch_date: batchDate,
     scheduled_for: slots[i],
+    mentions: o.mentions,
   }));
 
   const { error } = await admin.from("tweets").insert(rows);

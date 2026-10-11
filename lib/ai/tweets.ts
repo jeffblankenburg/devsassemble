@@ -20,11 +20,14 @@ export type TweetKind =
   | "evergreen"
   | "news";
 
+export type HandleProposal = { name: string; x_handle: string | null };
+
 export type TweetOption = {
   kind: TweetKind;
   body: string;
   source_url: string | null;
   rationale: string;
+  proposals: HandleProposal[];
 };
 
 const MODEL = "claude-sonnet-4-6";
@@ -63,8 +66,22 @@ const SCHEMA = {
             type: "string",
             description: "One sentence: why this is worth posting today.",
           },
+          proposals: {
+            type: "array",
+            description:
+              "Companies/products/people mentioned in this tweet that are NOT in the provided handle list but likely have an account — with your best-guess X handle (no @). Leave empty if none. Do NOT put these in the tweet body.",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                name: { type: "string" },
+                x_handle: { type: ["string", "null"] },
+              },
+              required: ["name", "x_handle"],
+            },
+          },
         },
-        required: ["kind", "body", "source_url", "rationale"],
+        required: ["kind", "body", "source_url", "rationale", "proposals"],
       },
     },
   },
@@ -86,6 +103,7 @@ function textOf(message: Anthropic.Message): string {
 export async function generateTweetOptions(
   material: string,
   newsDigest: string | null,
+  handles: string | null = null,
 ): Promise<TweetOption[]> {
   if (!client) {
     // Dev stub so the pipeline + queue are testable without a key.
@@ -95,6 +113,7 @@ export async function generateTweetOptions(
         body: "Builders helping builders. Share what you're making with AI, swap the tools that actually work, and show up for the next meetup. 👋",
         source_url: SITE_URL,
         rationale: "Dev stub — ANTHROPIC_API_KEY not set.",
+        proposals: [],
       },
     ];
   }
@@ -107,6 +126,8 @@ export async function generateTweetOptions(
     newsDigest
       ? `Fresh items right now from Reddit (vibe-coding / AI-dev communities), Hacker News, and Dev.to. The Reddit items are listed first and are our most on-topic, timely signal — lean into them. Link each source URL EXACTLY as given:\n${newsDigest}\n`
       : "",
+    handlesBlock(handles),
+    "",
     newsDigest
       ? "Write 4-6 distinct tweet options for today. Weight them toward the news above: at least 3 should react to specific items (favor the Reddit community posts) with your own builder's-eye take — a reaction, a question, a hot take — not just a restated headline, and link the source. 1-2 should spotlight DevsAssemble community activity (an upcoming event, a fresh project/tool, an active discussion) with a devsassemble.ai link. Optionally one evergreen. Favor timely, specific posts over generic ones; each must follow every rule in your instructions."
       : "Write 2-3 distinct tweet options for today drawn from the DevsAssemble community activity (an upcoming event, a fresh project/tool, an active discussion), plus optionally one evergreen. Favor timely, specific posts over generic ones. Each must follow every rule in your instructions.",
@@ -137,7 +158,22 @@ function parseOptions(res: Anthropic.Message): TweetOption[] {
       body: o.body.trim(),
       source_url: o.source_url?.trim() || null,
       rationale: o.rationale ?? "",
+      proposals: Array.isArray(o.proposals)
+        ? o.proposals
+            .filter((p) => p && typeof p.name === "string" && p.name.trim())
+            .map((p) => ({
+              name: p.name.trim(),
+              x_handle: p.x_handle?.trim() || null,
+            }))
+        : [],
     }));
+}
+
+/** A reusable prompt block describing the verified handles the model may tag. */
+function handlesBlock(handles: string | null): string {
+  return handles
+    ? `SOCIAL HANDLES you may tag — when a tweet mentions one of these, use its EXACT @handle inline so the account gets notified. NEVER invent a handle for anything not on this list:\n${handles}\n\nFor any company/product/person you mention that is NOT on the list but likely has an account, DON'T guess a handle in the tweet — instead list it under "proposals" with your best guess, so a human can verify it.`
+    : `Do NOT put any @handles in the tweet body (we have no verified handles yet). If you mention a company/product/person that likely has an account, list it under "proposals" with your best-guess X handle for a human to verify.`;
 }
 
 /**
@@ -150,10 +186,12 @@ export async function planTweets({
   material,
   news,
   count,
+  handles = null,
 }: {
   material: string;
   news: string | null;
   count: number;
+  handles?: string | null;
 }): Promise<TweetOption[]> {
   if (!client) return [];
 
@@ -166,6 +204,8 @@ export async function planTweets({
     news
       ? `DEV NEWS RIGHT NOW — Reddit (vibe-coding / AI-dev communities), Hacker News, Dev.to. React to the genuinely interesting ones and link the source URL EXACTLY as given:\n${news}`
       : "(no fresh news available)",
+    "",
+    handlesBlock(handles),
     "",
     "Rules for the batch:",
     `- Aim for ${count}, but SKIP anything low-quality, off-topic, mean-spirited, political, or NSFW — fewer great tweets beats padding with filler.`,

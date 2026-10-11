@@ -4,6 +4,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { gatherTweetMaterial } from "@/lib/tweets/gather";
 import { fetchDevNews, devNewsToText } from "@/lib/tweets/sources";
 import { generateTweetOptions, type TweetOption } from "@/lib/ai/tweets";
+import {
+  getVerifiedHandles,
+  registryToPromptText,
+  reconcileBody,
+  upsertProposals,
+} from "@/lib/social/handles";
 import { tweetLength, TWEET_MAX } from "@/lib/tweets/length";
 
 export type DraftResult =
@@ -51,6 +57,7 @@ export async function draftTweets(opts?: {
 }): Promise<DraftResult> {
   const now = opts?.now ?? new Date();
   const includeNews = opts?.includeNews !== false;
+  const admin = createAdminClient();
   const material = await gatherTweetMaterial(now);
   let news: string | null = null;
   if (includeNews) {
@@ -58,9 +65,15 @@ export async function draftTweets(opts?: {
     news = items.length ? devNewsToText(items) : null;
   }
 
+  const verified = await getVerifiedHandles(admin);
+
   let options: TweetOption[] = [];
   try {
-    options = await generateTweetOptions(material.text, news);
+    options = await generateTweetOptions(
+      material.text,
+      news,
+      registryToPromptText(verified),
+    );
   } catch (err) {
     return {
       ok: false,
@@ -71,19 +84,24 @@ export async function draftTweets(opts?: {
     return { ok: false, error: "No tweet options were generated." };
   }
 
-  const admin = createAdminClient();
+  await upsertProposals(admin, options.flatMap((o) => o.proposals));
+
   const createdFor = now.toISOString().slice(0, 10);
   const { data, error } = await admin
     .from("tweets")
     .insert(
-      options.map((o) => ({
-        status: "draft",
-        kind: o.kind,
-        body: ensureSourceLink(o.body, o.source_url),
-        source_url: o.source_url,
-        rationale: o.rationale,
-        created_for: createdFor,
-      })),
+      options.map((o) => {
+        const { body, mentions } = reconcileBody(o.body, verified);
+        return {
+          status: "draft",
+          kind: o.kind,
+          body: ensureSourceLink(body, o.source_url),
+          source_url: o.source_url,
+          rationale: o.rationale,
+          created_for: createdFor,
+          mentions,
+        };
+      }),
     )
     .select("id");
 

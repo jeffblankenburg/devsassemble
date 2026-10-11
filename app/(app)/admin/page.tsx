@@ -35,6 +35,12 @@ const SECTIONS = [
     body: "Review @devsassembleAI drafts, edit, and cross-post to X + Bluesky.",
     accent: "bg-brand-lime text-brand-ink",
   },
+  {
+    href: "/admin/handles",
+    title: "Handle registry",
+    body: "Verify social handles the drafter can @-mention for reach.",
+    accent: "bg-brand-blue text-white",
+  },
 ];
 
 export default async function AdminPage() {

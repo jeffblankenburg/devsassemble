@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { postTweet } from "@/lib/twitter/client";
 import { postSkeet } from "@/lib/bluesky/client";
+import { applyBlueskyHandles, type TweetMention } from "@/lib/social/handles";
 
 export type PublishResult =
   | { ok: true; xUrl?: string; blueskyUrl?: string; warning?: string }
@@ -22,7 +23,18 @@ export async function publishTweet(
     approvedBy?: string | null;
   },
 ): Promise<PublishResult> {
-  const [x, bsky] = await Promise.all([postTweet(opts.body), postSkeet(opts.body)]);
+  // Mentions were tagged with X handles; swap in Bluesky handles for the skeet.
+  const { data: row } = await db
+    .from("tweets")
+    .select("mentions")
+    .eq("id", opts.id)
+    .maybeSingle<{ mentions: TweetMention[] | null }>();
+  const skeetBody = applyBlueskyHandles(opts.body, row?.mentions ?? []);
+
+  const [x, bsky] = await Promise.all([
+    postTweet(opts.body),
+    postSkeet(skeetBody),
+  ]);
   if (!x.ok && !bsky.ok) {
     return {
       ok: false,
