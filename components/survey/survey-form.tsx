@@ -144,7 +144,7 @@ export function SurveyForm({ next }: { next?: string }) {
         </ComicButton>
         {!complete && (
           <span className="text-sm text-brand-ink/55">
-            Answer the five questions above to continue.
+            Answer the {SURVEY_QUESTIONS.length} questions above to continue.
           </span>
         )}
         {error && <span className="text-sm text-brand-purple">{error}</span>}
