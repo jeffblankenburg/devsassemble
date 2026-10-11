@@ -8,6 +8,8 @@ export type SurveyRow = {
   experience: string | null;
   coding_tools: string[];
   observability: string[];
+  hosting: string[];
+  databases: string[];
   goals: string[];
   building: string | null;
   created_at: string;
@@ -19,7 +21,7 @@ export async function listSurveyResponses(): Promise<SurveyRow[]> {
   const { data, error } = await supabase
     .from("survey_responses")
     .select(
-      "user_id, persona, experience, coding_tools, observability, goals, building, created_at",
+      "user_id, persona, experience, coding_tools, observability, hosting, databases, goals, building, created_at",
     )
     .order("created_at", { ascending: false });
   if (error) throw error;

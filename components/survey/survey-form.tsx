@@ -10,13 +10,21 @@ import {
 import { submitSurvey } from "@/lib/survey/actions";
 import { ComicButton } from "@/components/brand/comic-button";
 
-const MULTI_KEYS: MultiKey[] = ["coding_tools", "observability", "goals"];
+const MULTI_KEYS: MultiKey[] = [
+  "coding_tools",
+  "observability",
+  "hosting",
+  "databases",
+  "goals",
+];
 
 export function SurveyForm({ next }: { next?: string }) {
   const [single, setSingle] = useState<Record<string, string>>({});
   const [multi, setMulti] = useState<Record<string, string[]>>({
     coding_tools: [],
     observability: [],
+    hosting: [],
+    databases: [],
     goals: [],
   });
   const [building, setBuilding] = useState("");
@@ -51,6 +59,8 @@ export function SurveyForm({ next }: { next?: string }) {
         experience: single.experience ?? "",
         coding_tools: multi.coding_tools ?? [],
         observability: multi.observability ?? [],
+        hosting: multi.hosting ?? [],
+        databases: multi.databases ?? [],
         goals: multi.goals ?? [],
         building,
         next,

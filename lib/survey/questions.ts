@@ -2,7 +2,12 @@
 // admin aggregation + server-side validation, so they can never drift.
 
 export type SingleKey = "persona" | "experience";
-export type MultiKey = "coding_tools" | "observability" | "goals";
+export type MultiKey =
+  | "coding_tools"
+  | "observability"
+  | "hosting"
+  | "databases"
+  | "goals";
 
 export type SurveyQuestion = {
   key: SingleKey | MultiKey;
@@ -75,6 +80,46 @@ export const SURVEY_QUESTIONS: readonly SurveyQuestion[] = [
     ],
   },
   {
+    key: "hosting",
+    label: "Where do you deploy / host?",
+    multi: true,
+    options: [
+      "Haven't deployed yet",
+      "Vercel",
+      "Netlify",
+      "Cloudflare",
+      "AWS",
+      "Google Cloud",
+      "Azure",
+      "Render",
+      "Railway",
+      "Fly.io",
+      "Heroku",
+      "Self-hosted / VPS",
+      "Other",
+    ],
+  },
+  {
+    key: "databases",
+    label: "What do you use for your database?",
+    multi: true,
+    options: [
+      "None yet",
+      "Supabase",
+      "Firebase",
+      "Neon",
+      "PlanetScale",
+      "Turso",
+      "MongoDB",
+      "PostgreSQL (self-hosted)",
+      "MySQL",
+      "SQLite",
+      "Redis",
+      "Convex",
+      "Other",
+    ],
+  },
+  {
     key: "goals",
     label: "What are you most here for?",
     multi: true,
@@ -95,6 +140,8 @@ export type SurveyInput = {
   experience: string;
   coding_tools: string[];
   observability: string[];
+  hosting: string[];
+  databases: string[];
   goals: string[];
   building: string;
 };
@@ -124,12 +171,16 @@ export function cleanSurveyInput(input: Partial<SurveyInput>): CleanResult {
   const experience = cleanSingle(input.experience, "experience");
   const coding_tools = cleanMulti(input.coding_tools, "coding_tools");
   const observability = cleanMulti(input.observability, "observability");
+  const hosting = cleanMulti(input.hosting, "hosting");
+  const databases = cleanMulti(input.databases, "databases");
   const goals = cleanMulti(input.goals, "goals");
 
   if (!persona) return { ok: false, error: "Pick what best describes you." };
   if (!experience) return { ok: false, error: "Pick how long you've been building with AI." };
   if (coding_tools.length === 0) return { ok: false, error: "Pick at least one AI coding tool." };
   if (observability.length === 0) return { ok: false, error: "Pick at least one observability answer." };
+  if (hosting.length === 0) return { ok: false, error: "Pick at least one hosting answer." };
+  if (databases.length === 0) return { ok: false, error: "Pick at least one database answer." };
   if (goals.length === 0) return { ok: false, error: "Pick at least one reason you're here." };
 
   const building = (typeof input.building === "string" ? input.building : "")
@@ -138,6 +189,15 @@ export function cleanSurveyInput(input: Partial<SurveyInput>): CleanResult {
 
   return {
     ok: true,
-    data: { persona, experience, coding_tools, observability, goals, building },
+    data: {
+      persona,
+      experience,
+      coding_tools,
+      observability,
+      hosting,
+      databases,
+      goals,
+      building,
+    },
   };
 }

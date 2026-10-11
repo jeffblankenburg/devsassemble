@@ -12,8 +12,9 @@ function tally(
   const counts = new Map<string, number>(q.options.map((o) => [o, 0]));
   for (const row of rows) {
     if (q.multi) {
-      const vals = (row[q.key as "coding_tools" | "observability" | "goals"] ??
-        []) as string[];
+      const vals = (row[
+        q.key as "coding_tools" | "observability" | "hosting" | "databases" | "goals"
+      ] ?? []) as string[];
       for (const v of vals) counts.set(v, (counts.get(v) ?? 0) + 1);
     } else {
       const v = row[q.key as "persona" | "experience"];
