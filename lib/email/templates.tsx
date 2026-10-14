@@ -333,6 +333,32 @@ export function NewReportEmail({
   );
 }
 
+export function FeedbackEmail({
+  category,
+  message,
+  fromLabel,
+  pageUrl,
+  reviewUrl,
+}: {
+  category: string;
+  message: string;
+  fromLabel: string;
+  pageUrl: string | null;
+  reviewUrl: string;
+}) {
+  return (
+    <Layout preview="New feedback from the site" accent="blue">
+      <Heading style={h1}>New feedback 📬</Heading>
+      <Text style={p}>
+        <strong>{category}</strong> · from {fromLabel}
+        {pageUrl ? ` · ${pageUrl}` : ""}
+      </Text>
+      <Text style={quote}>{message}</Text>
+      <CTA href={reviewUrl} accent="blue" label="Open feedback queue" />
+    </Layout>
+  );
+}
+
 export function TweetDraftsReadyEmail({
   preview,
   reviewUrl,

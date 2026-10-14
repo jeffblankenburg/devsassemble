@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Bangers, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { FeedbackWidget } from "@/components/feedback/feedback-widget";
 
 // Body/UI type — clean, highly legible.
 const inter = Inter({
@@ -52,7 +53,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${inter.variable} ${bangers.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <FeedbackWidget />
+      </body>
     </html>
   );
 }

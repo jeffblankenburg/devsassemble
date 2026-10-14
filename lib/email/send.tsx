@@ -18,6 +18,7 @@ import {
   ReportResolvedEmail,
   AccountSuspendedEmail,
   NewReportEmail,
+  FeedbackEmail,
   TweetDraftsReadyEmail,
 } from "@/lib/email/templates";
 
@@ -139,6 +140,38 @@ export async function notifyNewReport(opts: {
           <NewReportEmail
             targetType={opts.targetType}
             reason={opts.reason}
+            reviewUrl={reviewUrl}
+          />
+        ),
+      })),
+    ),
+  );
+}
+
+/** Email admins/mods when site feedback comes in. */
+export async function notifyFeedback(opts: {
+  category: string;
+  message: string;
+  fromLabel: string;
+  pageUrl: string | null;
+}): Promise<void> {
+  const admin: AdminClient = createAdminClient();
+  const { data: mods } = await admin
+    .from("profiles")
+    .select("id")
+    .in("role", ["admin", "moderator"]);
+  const reviewUrl = `${SITE_URL}/admin/feedback`;
+
+  await Promise.all(
+    (mods ?? []).map((m) =>
+      sendToUser((m as { id: string }).id, "moderation", () => ({
+        subject: `New feedback: ${opts.category}`,
+        element: (
+          <FeedbackEmail
+            category={opts.category}
+            message={opts.message}
+            fromLabel={opts.fromLabel}
+            pageUrl={opts.pageUrl}
             reviewUrl={reviewUrl}
           />
         ),

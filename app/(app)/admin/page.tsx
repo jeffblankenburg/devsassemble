@@ -18,6 +18,12 @@ const SECTIONS = [
     accent: "bg-brand-purple text-white",
   },
   {
+    href: "/admin/feedback",
+    title: "Feedback",
+    body: "Read and triage feedback sent from the site's feedback widget.",
+    accent: "bg-brand-cream text-brand-ink",
+  },
+  {
     href: "/admin/news",
     title: "Captured news",
     body: "Browse the raw Reddit/dev-news feed captured via IFTTT.",
