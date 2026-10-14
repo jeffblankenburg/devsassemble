@@ -7,7 +7,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "DevsAssemble is a community for AI software developers to show what they've built, share the tools and strategies behind it, and assemble for events.",
+    "DevsAssemble is a community for AI software developers to show what they're building, share the tools and strategies behind it, and assemble for events.",
 };
 
 function Eyebrow({ children }: { children: ReactNode }) {
@@ -41,7 +41,7 @@ export default function AboutPage() {
           </h1>
           <p className="max-w-2xl text-lg text-brand-ink/80">
             DevsAssemble is a community for AI software developers to show what
-            they&apos;ve built, share the tools and strategies behind it, and
+            they&apos;re building, share the tools and strategies behind it, and
             assemble for livestreamed meetings and in-person meetups.
           </p>
         </header>

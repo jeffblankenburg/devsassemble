@@ -29,11 +29,11 @@ export const metadata: Metadata = {
     template: "%s · DevsAssemble",
   },
   description:
-    "A community for AI software developers to show what they've built, share tools and strategies, and assemble for livestreamed meetings.",
+    "A community for AI software developers to show what they're building, share tools and strategies, and assemble for livestreamed meetings.",
   openGraph: {
     title: "DevsAssemble",
     description:
-      "Show what you built. Share your strategies. Assemble with AI developers.",
+      "Show what you're building. Share your strategies. Assemble with AI developers.",
     url: siteUrl,
     siteName: "DevsAssemble",
     type: "website",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "DevsAssemble",
     description:
-      "Show what you built. Share your strategies. Assemble with AI developers.",
+      "Show what you're building. Share your strategies. Assemble with AI developers.",
   },
 };
 

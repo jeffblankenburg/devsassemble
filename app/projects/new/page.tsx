@@ -20,7 +20,8 @@ export default async function NewProjectPage() {
           Add a project
         </h1>
         <p className="mt-2 text-brand-ink/70">
-          Share a repo you built, or a tool/project you think is worth knowing.
+          Share a repo you&apos;re building, or a tool/project you think is
+          worth knowing.
         </p>
         <div className="mt-8 rounded-[var(--radius-comic)] border-ink bg-surface p-6 shadow-comic">
           <SubmitRepoForm />

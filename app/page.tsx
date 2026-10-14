@@ -32,7 +32,7 @@ const STEPS = [
   {
     n: "01",
     accent: "bg-brand-blue text-white",
-    title: "Show what you built",
+    title: "Show what you're building",
     body: "Publish a build in minutes — link the repo, drop screenshots and a live demo. Everyone can see it; no account needed to browse.",
   },
   {
@@ -149,9 +149,9 @@ export default async function Home() {
                 className="pop-in mt-5 max-w-xl text-lg text-brand-ink/80 sm:text-xl"
                 style={{ animationDelay: "160ms" }}
               >
-                A place for AI software developers to show what they&apos;ve
-                built, share the tools and strategies behind it, and assemble for
-                livestreamed meetings.
+                A place for AI software developers to show what they&apos;re
+                building, share the tools and strategies behind it, and assemble
+                for livestreamed meetings.
               </p>
               <div
                 className="pop-in mt-8 flex flex-col gap-4 sm:flex-row"

@@ -84,7 +84,8 @@ export default async function ProjectsPage({
               No projects yet
             </p>
             <p className="mt-2 text-brand-ink/70">
-              Be the first — share a repo you built or a tool you love.
+              Be the first — share a repo you&apos;re building or a tool you
+              love.
             </p>
           </div>
         )}
