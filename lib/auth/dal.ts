@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { Capability } from "@/lib/auth/capabilities";
 
 export type Role = "member" | "moderator" | "admin";
 
@@ -10,12 +11,22 @@ export type SessionUser = {
   id: string;
   email: string | null;
   role: Role;
+  capabilities: string[];
   username: string | null;
   displayName: string | null;
   avatarUrl: string | null;
   isBanned: boolean;
   needsOnboarding: boolean;
 };
+
+/** Does this user hold a capability? Admins (superusers) hold all of them. */
+export function userCan(
+  user: SessionUser | null,
+  cap: Capability,
+): boolean {
+  if (!user) return false;
+  return user.role === "admin" || user.capabilities.includes(cap);
+}
 
 /**
  * Data Access Layer. Following the Next.js 16 auth guidance, authorization
@@ -31,7 +42,9 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, username, display_name, avatar_url, is_banned, onboarded_at")
+    .select(
+      "role, capabilities, username, display_name, avatar_url, is_banned, onboarded_at",
+    )
     .eq("id", user.id)
     .single();
 
@@ -39,6 +52,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
     id: user.id,
     email: user.email ?? null,
     role: (profile?.role as Role) ?? "member",
+    capabilities: (profile?.capabilities as string[]) ?? [],
     username: profile?.username ?? null,
     displayName: profile?.display_name ?? null,
     avatarUrl: profile?.avatar_url ?? null,
@@ -61,9 +75,16 @@ export async function requireUser(): Promise<SessionUser> {
   return user;
 }
 
-/** Require a moderator or admin, or send unauthorized users home. */
+/** Require any staff member (admin or anyone with ≥1 capability). */
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await requireUser();
-  if (user.role !== "admin" && user.role !== "moderator") redirect("/");
+  if (user.role !== "admin" && user.capabilities.length === 0) redirect("/");
+  return user;
+}
+
+/** Require a specific capability (admins always pass). */
+export async function requireCapability(cap: Capability): Promise<SessionUser> {
+  const user = await requireUser();
+  if (!userCan(user, cap)) redirect("/");
   return user;
 }

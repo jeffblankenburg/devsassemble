@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { requireAdmin } from "@/lib/auth/dal";
+import { requireCapability } from "@/lib/auth/dal";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NewsFeed, type NewsItemRow } from "@/components/admin/news-feed";
 
 export const metadata: Metadata = { title: "Captured news" };
 
 export default async function AdminNewsPage() {
-  await requireAdmin();
+  await requireCapability("manage_social");
 
   const admin = createAdminClient();
   const { data } = await admin

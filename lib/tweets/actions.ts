@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/auth/dal";
+import { requireCapability } from "@/lib/auth/dal";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { publishTweet } from "@/lib/tweets/publish";
 import { draftTweets } from "@/lib/tweets/pipeline";
@@ -78,7 +78,7 @@ export async function approveAndPost(
   _prev: TweetActionState,
   formData: FormData,
 ): Promise<TweetActionState> {
-  const admin = await requireAdmin();
+  const admin = await requireCapability("manage_social");
   const id = String(formData.get("id") ?? "");
   const body = String(formData.get("body") ?? "").trim();
   const kind = String(formData.get("kind") ?? "");
@@ -114,7 +114,7 @@ export async function scheduleTweet(
   _prev: TweetActionState,
   formData: FormData,
 ): Promise<TweetActionState> {
-  const admin = await requireAdmin();
+  const admin = await requireCapability("manage_social");
   const id = String(formData.get("id") ?? "");
   const body = String(formData.get("body") ?? "").trim();
   const kind = String(formData.get("kind") ?? "");
@@ -158,7 +158,7 @@ export async function scheduleTweet(
  * so a stale batch can't dump out all at once.
  */
 export async function approveTodayBatch(): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireCapability("manage_social");
   const db = createAdminClient();
   await db
     .from("tweets")
@@ -171,14 +171,14 @@ export async function approveTodayBatch(): Promise<void> {
 
 /** Flip the autopilot kill-switch on/off. */
 export async function toggleAutopilot(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireCapability("manage_social");
   await setAutopilot({ enabled: formData.get("enabled") === "true" });
   revalidatePath("/admin/tweets");
 }
 
 /** Discard a draft. */
 export async function rejectTweet(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireCapability("manage_social");
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const db = createAdminClient();
@@ -197,7 +197,7 @@ export async function generateNow(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _formData: FormData,
 ): Promise<TweetActionState> {
-  await requireAdmin();
+  await requireCapability("manage_social");
   const result = await draftTweets({ includeNews: true });
   revalidatePath("/admin/tweets");
   if (!result.ok) return { error: result.error };

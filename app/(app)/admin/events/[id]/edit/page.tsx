@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { requireAdmin } from "@/lib/auth/dal";
+import { requireCapability } from "@/lib/auth/dal";
 import { getEventById } from "@/lib/events/queries";
 import { EventForm } from "@/components/admin/event-form";
 import { OccurrenceManager } from "@/components/admin/occurrence-manager";
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Edit event" };
 type EditEventPageProps = { params: Promise<{ id: string }> };
 
 export default async function EditEventPage({ params }: EditEventPageProps) {
-  await requireAdmin();
+  await requireCapability("manage_events");
   const { id } = await params;
   const event = await getEventById(id);
   if (!event) notFound();

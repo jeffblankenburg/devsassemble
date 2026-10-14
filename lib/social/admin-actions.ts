@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/auth/dal";
+import { requireCapability } from "@/lib/auth/dal";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 function cleanHandle(v: FormDataEntryValue | null): string | null {
@@ -11,7 +11,7 @@ function cleanHandle(v: FormDataEntryValue | null): string | null {
 
 /** Create or update a registry handle. Saving implies review → verified. */
 export async function saveHandle(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireCapability("manage_social");
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim().slice(0, 80);
   const x_handle = cleanHandle(formData.get("x_handle"));
@@ -38,7 +38,7 @@ export async function saveHandle(formData: FormData): Promise<void> {
 
 /** Remove a handle (also how you reject an AI proposal). */
 export async function deleteHandle(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireCapability("manage_social");
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const admin = createAdminClient();

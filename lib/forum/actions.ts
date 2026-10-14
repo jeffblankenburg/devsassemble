@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { requireAdmin, requireUser } from "@/lib/auth/dal";
+import { requireCapability, requireUser } from "@/lib/auth/dal";
 import { PUBLIC_SITE_URL } from "@/lib/email/config";
 import { topicSchema, replySchema, reportSchema } from "@/lib/validation/forum";
 import { slugify } from "@/lib/forum/slug";
@@ -257,7 +257,7 @@ export async function deletePost(formData: FormData): Promise<void> {
 
 /** Lock/unlock a topic (admin/moderator only). */
 export async function setTopicLock(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireCapability("moderate");
   const id = String(formData.get("id") ?? "");
   const slug = String(formData.get("slug") ?? "");
   const locked = formData.get("locked") === "true";
@@ -275,7 +275,7 @@ export async function setTopicLock(formData: FormData): Promise<void> {
 
 /** Pin/unpin a topic (admin/moderator only). */
 export async function setTopicPin(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireCapability("moderate");
   const id = String(formData.get("id") ?? "");
   const slug = String(formData.get("slug") ?? "");
   const pinned = formData.get("pinned") === "true";
@@ -328,7 +328,7 @@ export async function reportContent(
 
 /** Resolve or dismiss a report (admin/moderator only). */
 export async function resolveReport(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireCapability("moderate");
   const id = String(formData.get("id") ?? "");
   const status = formData.get("status") === "dismissed" ? "dismissed" : "resolved";
   if (!id) return;

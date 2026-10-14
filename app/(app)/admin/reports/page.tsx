@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireAdmin } from "@/lib/auth/dal";
+import { requireCapability } from "@/lib/auth/dal";
 import { listOpenReports } from "@/lib/forum/queries";
 import { resolveReport } from "@/lib/forum/actions";
 import { AuthorChip } from "@/components/forum/author-chip";
@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/forum/format";
 export const metadata: Metadata = { title: "Reports" };
 
 export default async function AdminReportsPage() {
-  await requireAdmin();
+  await requireCapability("moderate");
   const reports = await listOpenReports();
 
   return (

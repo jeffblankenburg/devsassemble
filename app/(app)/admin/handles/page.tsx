@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { requireAdmin } from "@/lib/auth/dal";
+import { requireCapability } from "@/lib/auth/dal";
 import { listSocialHandles } from "@/lib/social/queries";
 import { HandleRegistry } from "@/components/admin/handle-registry";
 
 export const metadata: Metadata = { title: "Handle registry" };
 
 export default async function AdminHandlesPage() {
-  await requireAdmin();
+  await requireCapability("manage_social");
   const handles = await listSocialHandles();
 
   return (

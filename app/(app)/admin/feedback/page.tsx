@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireAdmin } from "@/lib/auth/dal";
+import { requireCapability } from "@/lib/auth/dal";
 import { listFeedback } from "@/lib/feedback/queries";
 import { resolveFeedback } from "@/lib/feedback/actions";
 
@@ -13,7 +13,7 @@ const CATEGORY_STYLE: Record<string, string> = {
 };
 
 export default async function AdminFeedbackPage() {
-  await requireAdmin();
+  await requireCapability("manage_feedback");
   const items = await listFeedback();
   const open = items.filter((i) => i.status === "open");
   const resolved = items.filter((i) => i.status === "resolved");

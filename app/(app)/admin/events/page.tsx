@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/auth/dal";
+import { requireCapability } from "@/lib/auth/dal";
 import {
   listAllEventsForAdmin,
   filterAdminEvents,
@@ -30,7 +30,7 @@ export default async function AdminEventsPage({
 }: {
   searchParams: Promise<{ filter?: string }>;
 }) {
-  await requireAdmin();
+  await requireCapability("manage_events");
   const { filter: filterParam } = await searchParams;
   const activeFilter: AdminEventFilter = FILTERS.some(
     (f) => f.key === filterParam,

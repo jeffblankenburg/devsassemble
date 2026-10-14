@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireAdmin } from "@/lib/auth/dal";
+import { requireCapability } from "@/lib/auth/dal";
 import {
   listDraftTweets,
   listScheduledTweets,
@@ -16,7 +16,7 @@ import { AutopilotPanel } from "@/components/admin/autopilot-panel";
 export const metadata: Metadata = { title: "Tweets" };
 
 export default async function AdminTweetsPage() {
-  await requireAdmin();
+  await requireCapability("manage_social");
   const [drafts, scheduled, posted, autopilot] = await Promise.all([
     listDraftTweets(),
     listScheduledTweets(),

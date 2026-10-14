@@ -2,7 +2,7 @@
 
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
-import { getSessionUser, requireAdmin } from "@/lib/auth/dal";
+import { getSessionUser, requireCapability } from "@/lib/auth/dal";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyFeedback } from "@/lib/email/send";
 
@@ -51,7 +51,7 @@ export async function submitFeedback(input: {
 
 /** Resolve (or re-open) a feedback item. Admin/moderator only. */
 export async function resolveFeedback(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireCapability("manage_feedback");
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const reopen = formData.get("reopen") === "true";

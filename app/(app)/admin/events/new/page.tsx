@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { requireAdmin } from "@/lib/auth/dal";
+import { requireCapability } from "@/lib/auth/dal";
 import { EventForm } from "@/components/admin/event-form";
 
 export const metadata: Metadata = { title: "New event" };
 
 export default async function NewEventPage() {
-  await requireAdmin();
+  await requireCapability("manage_events");
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireAdmin } from "@/lib/auth/dal";
+import { requireCapability } from "@/lib/auth/dal";
 import { listSurveyResponses } from "@/lib/survey/queries";
 import { SURVEY_QUESTIONS, type SurveyQuestion } from "@/lib/survey/questions";
 
@@ -25,7 +25,7 @@ function tally(
 }
 
 export default async function AdminSurveyPage() {
-  await requireAdmin();
+  await requireCapability("view_insights");
   const rows = await listSurveyResponses();
   const total = rows.length;
   const buildings = rows
