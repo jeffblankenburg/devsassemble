@@ -10,6 +10,8 @@ import { ReportButton } from "@/components/forum/report-button";
 import { ComicButton } from "@/components/brand/comic-button";
 import { getSessionUser } from "@/lib/auth/dal";
 import { getTopicBySlug, listPosts } from "@/lib/forum/queries";
+import { getLinkPreviewsForBodies } from "@/lib/links/queries";
+import { LinkPreviews } from "@/components/links/link-preview-card";
 import {
   deleteTopic,
   deletePost,
@@ -43,6 +45,11 @@ export default async function TopicPage({ params }: TopicPageProps) {
   const [posts, user] = await Promise.all([
     listPosts(topic.id),
     getSessionUser(),
+  ]);
+
+  const previews = await getLinkPreviewsForBodies([
+    topic.body,
+    ...posts.map((p) => p.body),
   ]);
 
   const isAdmin = user?.role === "admin" || user?.role === "moderator";
@@ -88,6 +95,11 @@ export default async function TopicPage({ params }: TopicPageProps) {
 
           <div className="mt-6 rounded-[var(--radius-comic)] border-ink bg-surface p-6 shadow-comic">
             <Markdown>{topic.body}</Markdown>
+            <LinkPreviews
+              body={topic.body}
+              previews={previews}
+              sourceTopicId={topic.id}
+            />
           </div>
 
           {/* Topic controls */}
@@ -159,6 +171,11 @@ export default async function TopicPage({ params }: TopicPageProps) {
                   </div>
                   <div className="mt-3">
                     <Markdown>{post.body}</Markdown>
+                    <LinkPreviews
+                      body={post.body}
+                      previews={previews}
+                      sourceTopicId={topic.id}
+                    />
                   </div>
                   <div className="mt-3 flex items-center gap-3">
                     {canDelete && (

@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicHeader } from "@/components/site/public-header";
 import { SiteFooter } from "@/components/site/site-footer";
-import { AuthorChip } from "@/components/forum/author-chip";
+import { TopicCard } from "@/components/forum/topic-card";
 import { ComicButton } from "@/components/brand/comic-button";
 import { listCategories, listTopics } from "@/lib/forum/queries";
+import { getLinkPreviewsForBodies } from "@/lib/links/queries";
 import { getSessionUser } from "@/lib/auth/dal";
-import { timeAgo } from "@/lib/forum/format";
 
 export const metadata: Metadata = {
   title: "Discussions",
@@ -27,6 +27,8 @@ export default async function DiscussionsPage({
     listTopics({ categorySlug: category, limit: 50 }),
     getSessionUser(),
   ]);
+
+  const previews = await getLinkPreviewsForBodies(topics.map((t) => t.body));
 
   const newTopicHref = user
     ? "/discussions/new"
@@ -81,47 +83,10 @@ export default async function DiscussionsPage({
             </p>
           </div>
         ) : (
-          <ul className="mt-8 flex flex-col gap-3">
+          <ul className="mt-8 flex flex-col gap-4">
             {topics.map((t) => (
-              <li
-                key={t.id}
-                className="rounded-[var(--radius-comic)] border-ink bg-surface p-4 shadow-comic"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {t.is_pinned && (
-                        <span className="rounded-md border-[2px] border-brand-ink bg-brand-lime px-2 py-0.5 font-display text-xs uppercase text-brand-ink">
-                          Pinned
-                        </span>
-                      )}
-                      {t.is_locked && (
-                        <span className="rounded-md border-[2px] border-brand-ink bg-brand-ink px-2 py-0.5 font-display text-xs uppercase text-white">
-                          Locked
-                        </span>
-                      )}
-                      {t.category && (
-                        <span className="font-mono text-xs uppercase tracking-widest text-muted">
-                          {t.category.name}
-                        </span>
-                      )}
-                    </div>
-                    <Link
-                      href={`/discussions/${t.slug}`}
-                      className="focus-comic mt-1 block font-display text-xl uppercase leading-tight tracking-wide text-brand-ink hover:text-brand-blue"
-                    >
-                      {t.title}
-                    </Link>
-                    <div className="mt-1 flex items-center gap-2 text-sm text-brand-ink/60">
-                      <AuthorChip author={t.author} />
-                      <span>· {timeAgo(t.last_activity_at)}</span>
-                    </div>
-                  </div>
-                  <span className="shrink-0 font-mono text-xs uppercase tracking-widest text-muted">
-                    {t.reply_count}{" "}
-                    {t.reply_count === 1 ? "reply" : "replies"}
-                  </span>
-                </div>
+              <li key={t.id}>
+                <TopicCard topic={t} previews={previews} />
               </li>
             ))}
           </ul>

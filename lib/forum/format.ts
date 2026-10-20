@@ -1,3 +1,23 @@
+/**
+ * A clean, plain-text snippet of a markdown body for timeline cards. Drops the
+ * things that render as their own elements — fenced code, image embeds, and
+ * bare-URL-only lines (those become link-preview cards) — and strips inline
+ * markdown punctuation so the excerpt reads as prose.
+ */
+export function plainExcerpt(body: string, max = 220): string {
+  const text = body
+    .replace(/```[\s\S]*?```/g, " ") // fenced code blocks
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "") // image embeds
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // links → their text
+    .split(/\r?\n/)
+    .filter((line) => !/^<?https?:\/\/\S+>?$/i.test(line.trim())) // bare-URL lines
+    .join(" ")
+    .replace(/[`*_>#~]/g, "") // inline markdown punctuation
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+}
+
 /** Short absolute date, e.g. "Oct 2, 2026". */
 export function formatDate(iso: string): string {
   return new Intl.DateTimeFormat("en-US", {

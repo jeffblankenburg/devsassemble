@@ -55,6 +55,13 @@ const SECTIONS: {
     cap: "view_insights",
   },
   {
+    href: "/admin/analytics",
+    title: "Link analytics",
+    body: "Clickthroughs on shared articles, videos, and links from discussions.",
+    accent: "bg-brand-lime text-brand-ink",
+    cap: "view_insights",
+  },
+  {
     href: "/admin/tweets",
     title: "Tweets",
     body: "Review @devsassembleAI drafts, edit, and cross-post to X + Bluesky.",

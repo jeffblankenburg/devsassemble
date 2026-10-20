@@ -3,6 +3,10 @@
 import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { uploadForumImage } from "@/lib/forum/upload";
 import { Markdown } from "@/components/markdown/markdown";
+import { LinkPreviews } from "@/components/links/link-preview-card";
+import { previewLink } from "@/lib/links/actions";
+import { extractBareUrls } from "@/lib/links/extract";
+import type { LinkPreview } from "@/lib/links/constants";
 import {
   FORUM_IMAGE_MAX_BYTES,
   FORUM_IMAGE_TYPES,
@@ -99,10 +103,33 @@ export function MarkdownField({
   const ref = useRef<Area>(null);
   const [preview, setPreview] = useState(false);
   const [previewText, setPreviewText] = useState("");
+  const [linkPreviews, setLinkPreviews] = useState<Map<string, LinkPreview>>(
+    new Map(),
+  );
+  // URLs already resolved or in flight — avoids refetching across toggles.
+  const seenUrls = useRef<Set<string>>(new Set());
 
   function showPreview() {
-    setPreviewText(ref.current?.value ?? "");
+    const text = ref.current?.value ?? "";
+    setPreviewText(text);
     setPreview(true);
+    void resolvePreviews(text);
+  }
+
+  async function resolvePreviews(text: string) {
+    for (const url of extractBareUrls(text)) {
+      if (seenUrls.current.has(url)) continue;
+      seenUrls.current.add(url);
+      try {
+        const res = await previewLink(url);
+        if (res.preview) {
+          const resolved = res.preview;
+          setLinkPreviews((prev) => new Map(prev).set(url, resolved));
+        }
+      } catch {
+        // Best-effort: a failed preview just leaves the plain link.
+      }
+    }
   }
 
   return (
@@ -144,7 +171,14 @@ export function MarkdownField({
           style={{ minHeight: `${rows * 1.6}rem` }}
         >
           {previewText.trim() ? (
-            <Markdown>{previewText}</Markdown>
+            <>
+              <Markdown>{previewText}</Markdown>
+              <LinkPreviews
+                body={previewText}
+                previews={linkPreviews}
+                track={false}
+              />
+            </>
           ) : (
             <span className="text-brand-ink/45">Nothing to preview yet.</span>
           )}

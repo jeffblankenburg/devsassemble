@@ -5,6 +5,8 @@ import { ItemReplyForm } from "@/components/forum/item-reply-form";
 import { ComicButton } from "@/components/brand/comic-button";
 import { getSessionUser } from "@/lib/auth/dal";
 import { getItemTopic, listPosts } from "@/lib/forum/queries";
+import { getLinkPreviewsForBodies } from "@/lib/links/queries";
+import { LinkPreviews } from "@/components/links/link-preview-card";
 import { deletePost } from "@/lib/forum/actions";
 import { timeAgo } from "@/lib/forum/format";
 
@@ -30,6 +32,7 @@ export async function ItemDiscussion({
   ]);
   const posts = topic ? await listPosts(topic.id) : [];
   const isAdmin = user?.role === "admin" || user?.role === "moderator";
+  const previews = await getLinkPreviewsForBodies(posts.map((p) => p.body));
 
   return (
     <section id="discussion" className="mt-10 scroll-mt-24">
@@ -54,6 +57,11 @@ export async function ItemDiscussion({
                 </div>
                 <div className="mt-3">
                   <Markdown>{post.body}</Markdown>
+                  <LinkPreviews
+                    body={post.body}
+                    previews={previews}
+                    sourceTopicId={topic?.id}
+                  />
                 </div>
                 <div className="mt-3 flex items-center gap-3">
                   {canDelete && topic && (

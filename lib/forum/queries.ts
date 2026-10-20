@@ -20,6 +20,7 @@ export type TopicListItem = {
   id: string;
   slug: string;
   title: string;
+  body: string;
   reply_count: number;
   is_pinned: boolean;
   is_locked: boolean;
@@ -30,7 +31,6 @@ export type TopicListItem = {
 };
 
 export type TopicDetail = TopicListItem & {
-  body: string;
   author_id: string | null;
   category_id: string | null;
 };
@@ -54,9 +54,9 @@ export type ReportItem = {
 };
 
 const TOPIC_LIST_SELECT =
-  "id, slug, title, reply_count, is_pinned, is_locked, last_activity_at, created_at, category:categories ( slug, name ), author:profiles ( username, display_name, avatar_url )";
+  "id, slug, title, body, reply_count, is_pinned, is_locked, last_activity_at, created_at, category:categories ( slug, name ), author:profiles ( username, display_name, avatar_url )";
 
-const TOPIC_DETAIL_SELECT = `${TOPIC_LIST_SELECT}, body, author_id, category_id`;
+const TOPIC_DETAIL_SELECT = `${TOPIC_LIST_SELECT}, author_id, category_id`;
 
 const POST_SELECT =
   "id, body, created_at, author_id, author:profiles ( username, display_name, avatar_url )";

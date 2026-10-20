@@ -5,6 +5,10 @@
       "schedule": "0 4 * * *"
     },
     {
+      "path": "/api/cron/link-preview-sweep",
+      "schedule": "30 4 * * *"
+    },
+    {
       "path": "/api/cron/event-reminders",
       "schedule": "0 * * * *"
     },

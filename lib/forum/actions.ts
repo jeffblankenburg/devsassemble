@@ -11,6 +11,7 @@ import { PUBLIC_SITE_URL } from "@/lib/email/config";
 import { topicSchema, replySchema, reportSchema } from "@/lib/validation/forum";
 import { slugify } from "@/lib/forum/slug";
 import { commitForumImages } from "@/lib/forum/images";
+import { unfurlPost } from "@/lib/links/unfurl";
 import {
   notifyForumReply,
   notifyNewReport,
@@ -71,6 +72,7 @@ export async function createTopic(
   }
 
   await commitForumImages(supabase, parsed.data.body);
+  after(() => unfurlPost(parsed.data.body));
 
   revalidatePath("/discussions");
   redirect(`/discussions/${createdSlug}`);
@@ -114,6 +116,7 @@ export async function createReply(
   if (error) return { error: error.message };
 
   await commitForumImages(supabase, parsed.data.body);
+  after(() => unfurlPost(parsed.data.body));
 
   // Notify the topic author (not the replier themselves).
   if (topic && topic.author_id && topic.author_id !== user.id) {
@@ -222,6 +225,7 @@ export async function createItemReply(
   if (error) return { error: error.message };
 
   await commitForumImages(supabase, parsed.data.body);
+  after(() => unfurlPost(parsed.data.body));
 
   if (itemPath.startsWith("/")) revalidatePath(itemPath);
   return { ok: true };
