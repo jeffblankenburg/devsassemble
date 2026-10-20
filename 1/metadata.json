@@ -1,0 +1,115 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M5CQPV3T06ENT522W6MWX2R8",
+  "session_id": "503835d4-9390-43e4-994e-8f36544b88d5",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-20T13:23:44.683552Z",
+  "branch": "main",
+  "checkpoints_count": 7,
+  "save_step_count": 6,
+  "files_touched": [
+    "app/(app)/admin/analytics/page.tsx",
+    "app/(app)/admin/page.tsx",
+    "app/api/cron/link-preview-sweep/route.ts",
+    "app/discussions/[slug]/page.tsx",
+    "app/discussions/page.tsx",
+    "app/l/[id]/route.ts",
+    "components/forum/item-discussion.tsx",
+    "components/forum/markdown-toolbar.tsx",
+    "components/forum/topic-card.tsx",
+    "components/links/link-preview-card.tsx",
+    "lib/forum/actions.ts",
+    "lib/forum/format.ts",
+    "lib/forum/queries.ts",
+    "lib/links/actions.ts",
+    "lib/links/analytics.ts",
+    "lib/links/constants.ts",
+    "lib/links/extract.ts",
+    "lib/links/queries.ts",
+    "lib/links/resolve.ts",
+    "lib/links/unfurl.ts",
+    "lib/net/rate-limit.ts",
+    "lib/net/safe-fetch.ts",
+    "supabase/migrations/20261002000025_link_previews.sql",
+    "supabase/migrations/20261002000026_discussion_categories.sql",
+    "supabase/migrations/20261002000027_link_clicks.sql",
+    "vercel.json"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-8[1m]",
+  "turn_id": "f5f1fcb7f30c",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 20607,
+    "cache_creation_tokens": 272940,
+    "cache_read_tokens": 20112938,
+    "output_tokens": 142774,
+    "api_call_count": 134
+  },
+  "session_metrics": {
+    "turn_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-20T13:23:44.648721Z",
+    "agent_lines": 1771,
+    "agent_removed": 47,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1771,
+    "total_lines_changed": 1818,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1054,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1054,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1211,
+      "agent_lines_removed": 2
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1251,
+      "agent_lines_removed": 2
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1360,
+      "agent_lines_removed": 47
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1771,
+      "agent_lines_removed": 47
+    }
+  ]
+}

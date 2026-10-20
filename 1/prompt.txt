@@ -1,0 +1,25 @@
+in the discussion section, should this be the place that people post interesting articles and videos?  If yes, can we provide previews of the links in their content?  If it's a video, show the thumbnail and description.  For the article, if there's a hero image, show that.  Much like Twitter, Facebook, and Reddit do?  Are there other types of previews you should consider?
+
+---
+
+I'd like you to take a responsible path towards making this happen.
+
+---
+
+Should the preview panel show this?
+
+---
+
+Yes, build it and add a simple rate limiter
+
+---
+
+We should rethink the categories for discussions.  Link, Video, etc.  What do you recommend?
+
+---
+
+I think the discussions page also needs a bit of an overhaul to show these previews as well.  More like most timelines on social media.
+
+---
+
+Are we tracking clickthroughs of our content?  For example, links to videos and articles?  I'd like to be able to monitor that.

@@ -3,9 +3,34 @@
   "checkpoint_id": "01M5CQPV3T06ENT522W6MWX2R8",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 8,
   "files_touched": [
-    "components/forum/markdown-toolbar.tsx"
+    "app/(app)/admin/analytics/page.tsx",
+    "app/(app)/admin/page.tsx",
+    "app/api/cron/link-preview-sweep/route.ts",
+    "app/discussions/[slug]/page.tsx",
+    "app/discussions/page.tsx",
+    "app/l/[id]/route.ts",
+    "components/forum/item-discussion.tsx",
+    "components/forum/markdown-toolbar.tsx",
+    "components/forum/topic-card.tsx",
+    "components/links/link-preview-card.tsx",
+    "lib/forum/actions.ts",
+    "lib/forum/format.ts",
+    "lib/forum/queries.ts",
+    "lib/links/actions.ts",
+    "lib/links/analytics.ts",
+    "lib/links/constants.ts",
+    "lib/links/extract.ts",
+    "lib/links/queries.ts",
+    "lib/links/resolve.ts",
+    "lib/links/unfurl.ts",
+    "lib/net/rate-limit.ts",
+    "lib/net/safe-fetch.ts",
+    "supabase/migrations/20261002000025_link_previews.sql",
+    "supabase/migrations/20261002000026_discussion_categories.sql",
+    "supabase/migrations/20261002000027_link_clicks.sql",
+    "vercel.json"
   ],
   "sessions": [
     {
@@ -14,13 +39,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 81220,
-    "cache_creation_tokens": 6188190,
-    "cache_read_tokens": 389515497,
-    "output_tokens": 1008443,
-    "api_call_count": 876
+    "input_tokens": 101827,
+    "cache_creation_tokens": 6461130,
+    "cache_read_tokens": 409628435,
+    "output_tokens": 1151217,
+    "api_call_count": 1010
   }
 }
