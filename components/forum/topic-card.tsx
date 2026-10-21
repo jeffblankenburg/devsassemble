@@ -1,9 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import { AuthorChip } from "@/components/forum/author-chip";
 import { LinkPreviews } from "@/components/links/link-preview-card";
 import type { TopicListItem } from "@/lib/forum/queries";
 import type { LinkPreview } from "@/lib/links/constants";
-import { timeAgo, plainExcerpt } from "@/lib/forum/format";
+import { timeAgo, plainExcerpt, firstImageUrl } from "@/lib/forum/format";
 
 /**
  * One topic as a social-timeline card: author up top, then the title + excerpt
@@ -19,6 +20,7 @@ export function TopicCard({
   previews: Map<string, LinkPreview>;
 }) {
   const excerpt = plainExcerpt(topic.body);
+  const imageUrl = firstImageUrl(topic.body);
   const href = `/discussions/${topic.slug}`;
 
   return (
@@ -56,6 +58,23 @@ export function TopicCard({
           <p className="mt-1 line-clamp-3 text-brand-ink/70">{excerpt}</p>
         )}
       </Link>
+
+      {imageUrl && (
+        <Link
+          href={href}
+          className="focus-comic mt-3 block overflow-hidden rounded-[var(--radius-comic)] border-ink shadow-comic-sm"
+        >
+          <span className="relative block aspect-[16/9] bg-brand-ink/5">
+            <Image
+              src={imageUrl}
+              alt=""
+              fill
+              sizes="(max-width: 768px) 100vw, 768px"
+              className="object-cover"
+            />
+          </span>
+        </Link>
+      )}
 
       <LinkPreviews
         body={topic.body}

@@ -33,3 +33,27 @@ export async function getLinkPreviewsForBodies(
   for (const row of (data ?? []) as LinkPreview[]) map.set(row.url, row);
   return map;
 }
+
+/**
+ * Resolved previews for an explicit set of URLs (already normalized by the
+ * caller), keyed by url. Used by the /feed page to decorate posts with a
+ * preview of the article/video they link to.
+ */
+export async function getLinkPreviewsForUrls(
+  urls: string[],
+): Promise<Map<string, LinkPreview>> {
+  const unique = [...new Set(urls.filter(Boolean))];
+  if (unique.length === 0) return new Map();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("link_previews")
+    .select("id, url, kind, title, description, site_name, author, image_url")
+    .in("url", unique)
+    .eq("status", "ok");
+  if (error) return new Map();
+
+  const map = new Map<string, LinkPreview>();
+  for (const row of (data ?? []) as LinkPreview[]) map.set(row.url, row);
+  return map;
+}

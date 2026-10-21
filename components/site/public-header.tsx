@@ -10,6 +10,7 @@ const NAV = [
   { href: "/projects", label: "Projects" },
   { href: "/tools", label: "Tools" },
   { href: "/discussions", label: "Discussions" },
+  { href: "/feed", label: "Feed" },
 ];
 
 /** Public site header for no-auth pages (events, profiles, …). */

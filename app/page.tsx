@@ -7,6 +7,8 @@ import { AppHeader } from "@/components/app/app-header";
 import { EventCard } from "@/components/events/event-card";
 import { NextEvent } from "@/components/events/next-event";
 import { HeroActivity } from "@/components/home/hero-activity";
+import { LatestPosts } from "@/components/home/latest-posts";
+import { SocialLinks } from "@/components/site/social-links";
 import { listPublishedEvents } from "@/lib/events/queries";
 import { getSessionUser } from "@/lib/auth/dal";
 
@@ -216,6 +218,9 @@ export default async function Home() {
           </ul>
         </section>
 
+        {/* Latest from the social feed */}
+        <LatestPosts />
+
         {/* How it works */}
         <section id="how" className="scroll-mt-24 px-6 py-20 sm:py-24">
           <div className="mx-auto max-w-6xl">
@@ -362,6 +367,9 @@ export default async function Home() {
             <Link href="/discussions" className="focus-comic text-sm text-brand-ink/75 hover:text-brand-blue">
               Discussions
             </Link>
+            <Link href="/feed" className="focus-comic text-sm text-brand-ink/75 hover:text-brand-blue">
+              Feed
+            </Link>
             <a href="#events" className="focus-comic text-sm text-brand-ink/75 hover:text-brand-blue">
               Events
             </a>
@@ -395,10 +403,11 @@ export default async function Home() {
             </ComicButton>
           </div>
         </div>
-        <div className="mx-auto mt-10 flex max-w-6xl items-center justify-between border-t border-brand-ink/15 pt-6">
+        <div className="mx-auto mt-10 flex max-w-6xl flex-wrap items-center justify-between gap-4 border-t border-brand-ink/15 pt-6">
           <p className="text-sm text-brand-ink/60">
             © {new Date().getFullYear()} DevsAssemble
           </p>
+          <SocialLinks className="flex items-center gap-4" />
           <p className="font-mono text-xs uppercase tracking-widest text-muted">
             devsassemble.ai
           </p>

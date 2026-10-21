@@ -18,6 +18,18 @@ export function plainExcerpt(body: string, max = 220): string {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }
 
+/**
+ * The first image a post embeds — a markdown `![](url)` embed or a bare image
+ * URL — so a timeline card can show image-only (or image-led) posts. Returns
+ * null when there's no image.
+ */
+export function firstImageUrl(body: string): string | null {
+  const md = /!\[[^\]]*\]\(\s*(\S+?)\s*\)/.exec(body);
+  if (md?.[1]) return md[1];
+  const bare = /(?:^|\s)(https?:\/\/\S+\.(?:png|jpe?g|gif|webp))(?:\s|$)/i.exec(body);
+  return bare?.[1] ?? null;
+}
+
 /** Short absolute date, e.g. "Oct 2, 2026". */
 export function formatDate(iso: string): string {
   return new Intl.DateTimeFormat("en-US", {
