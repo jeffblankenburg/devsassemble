@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PublicHeader } from "@/components/site/public-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RepoCard } from "@/components/repos/repo-card";
+import { RepoOwnerControls } from "@/components/repos/repo-owner-controls";
 import { ItemDiscussion } from "@/components/forum/item-discussion";
 import { getRepo } from "@/lib/repos/queries";
 import { getSessionUser } from "@/lib/auth/dal";
@@ -26,6 +27,10 @@ export default async function ProjectDetailPage({ params }: Props) {
   const [repo, user] = await Promise.all([getRepo(id), getSessionUser()]);
   if (!repo) notFound();
 
+  const canManage = Boolean(
+    user && (user.id === repo.submitted_by || user.role === "admin"),
+  );
+
   return (
     <>
       <PublicHeader />
@@ -42,6 +47,7 @@ export default async function ProjectDetailPage({ params }: Props) {
             isAuthed={Boolean(user)}
             loginHref={`/login?next=/projects/${id}`}
           />
+          {canManage && <RepoOwnerControls id={repo.id} note={repo.note} />}
         </div>
         <ItemDiscussion
           itemType="project"
