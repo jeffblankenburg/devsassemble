@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M5WKVV86QT09K39ENT62RCBD",
+  "session_id": "503835d4-9390-43e4-994e-8f36544b88d5",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-26T17:24:24.660868Z",
+  "branch": "main",
+  "checkpoints_count": 7,
+  "save_step_count": 1,
+  "files_touched": [
+    "app/projects/[id]/page.tsx",
+    "components/repos/repo-owner-controls.tsx",
+    "lib/repos/actions.ts",
+    "lib/validation/repos.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-8[1m]",
+  "turn_id": "8ebdfc195536",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 23694,
+    "cache_creation_tokens": 1441495,
+    "cache_read_tokens": 61065444,
+    "output_tokens": 268775,
+    "api_call_count": 257
+  },
+  "session_metrics": {
+    "turn_count": 14
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-26T17:24:24.590142Z",
+    "agent_lines": 224,
+    "agent_removed": 8,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 224,
+    "total_lines_changed": 232,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
