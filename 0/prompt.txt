@@ -19,3 +19,7 @@ I cancelled tonight's meetup because the organizers had to cancel.  But it is st
 ---
 
 It appears that users can't edit a project after they've added it to the system.  What do you recommend?
+
+---
+
+commit and push
