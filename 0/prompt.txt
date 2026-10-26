@@ -1,0 +1,37 @@
+Can you make me a QR code that leads to devsassemble.ai?
+
+---
+
+drop it
+
+---
+
+Is there a way to show our social media news feed on the website as well?  Not sure the right approach on this, but it feels weird that we're publishing all of this content and it's not also visible on our website.
+
+---
+
+Icons would be helpful, instead of handles.
+
+---
+
+I cancelled tonight's meetup because the organizers had to cancel.  But it is still showing as the next upcoming event on the home page.
+
+---
+
+It appears that users can't edit a project after they've added it to the system.  What do you recommend?
+
+---
+
+commit and push
+
+---
+
+How do I edit a project that I created?
+
+---
+
+do admins see edit always?
+
+---
+
+Make sure a resync also resyncs the github user icon as well.
