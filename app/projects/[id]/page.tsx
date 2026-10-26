@@ -27,8 +27,13 @@ export default async function ProjectDetailPage({ params }: Props) {
   const [repo, user] = await Promise.all([getRepo(id), getSessionUser()]);
   if (!repo) notFound();
 
+  // Owner, admin, or moderator — matches the repos RLS is_admin() (admin +
+  // moderator) and the discussions convention.
   const canManage = Boolean(
-    user && (user.id === repo.submitted_by || user.role === "admin"),
+    user &&
+      (user.id === repo.submitted_by ||
+        user.role === "admin" ||
+        user.role === "moderator"),
   );
 
   return (

@@ -99,6 +99,18 @@ export async function resyncRepo(formData: FormData): Promise<void> {
   const meta = await fetchRepoMeta(repo.owner, repo.name);
   if (!meta) return; // couldn't reach GitHub — leave the existing data untouched
 
+  const syncedAt = new Date().toISOString();
+  // GitHub avatar URLs are stable (e.g. .../u/79632?v=4): the image content
+  // changes but the URL doesn't, so next/image + the browser would keep
+  // serving the cached old icon. Append a per-resync cache-buster so the
+  // refreshed avatar actually shows. (fetchRepoMeta always returns the clean
+  // URL, so this never accumulates across resyncs.)
+  const avatar = meta.owner_avatar_url
+    ? `${meta.owner_avatar_url}${
+        meta.owner_avatar_url.includes("?") ? "&" : "?"
+      }rs=${Date.parse(syncedAt)}`
+    : null;
+
   const { error } = await supabase
     .from("repos")
     .update({
@@ -106,8 +118,8 @@ export async function resyncRepo(formData: FormData): Promise<void> {
       homepage_url: meta.homepage_url ?? null,
       stars: meta.stars ?? null,
       language: meta.language ?? null,
-      owner_avatar_url: meta.owner_avatar_url ?? null,
-      last_synced_at: new Date().toISOString(),
+      owner_avatar_url: avatar,
+      last_synced_at: syncedAt,
     })
     .eq("id", id);
   if (error) throw error;
