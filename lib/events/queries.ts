@@ -67,6 +67,12 @@ const OCCURRENCES_AHEAD = 2;
 export async function listPublishedEvents(opts?: {
   when?: "upcoming" | "past";
   limit?: number;
+  /**
+   * Cancelled occurrences are included by default (the events page shows them
+   * struck-through). Pass false to drop them — e.g. the home page shouldn't
+   * feature a cancelled occurrence as the "next event".
+   */
+  includeCancelled?: boolean;
 }): Promise<EventRow[]> {
   const supabase = await createClient();
   const now = new Date();
@@ -89,6 +95,10 @@ export async function listPublishedEvents(opts?: {
       .map((e) => latestPastOccurrence(e, now))
       .filter((e): e is EventRow => e !== null)
       .sort((a, b) => (a.starts_at > b.starts_at ? -1 : 1));
+  }
+
+  if (opts?.includeCancelled === false) {
+    result = result.filter((e) => e.status !== "cancelled");
   }
 
   return opts?.limit ? result.slice(0, opts.limit) : result;

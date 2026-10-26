@@ -90,7 +90,7 @@ function SectionEyebrow({ children }: { children: ReactNode }) {
 
 export default async function Home() {
   const [upcoming, user] = await Promise.all([
-    listPublishedEvents({ when: "upcoming", limit: 3 }),
+    listPublishedEvents({ when: "upcoming", limit: 3, includeCancelled: false }),
     getSessionUser(),
   ]);
   const nextEvent = upcoming[0];
